@@ -62,7 +62,12 @@ func (s *StringSchema) Valid(values ...string) *StringSchema {
 
 func (s *StringSchema) Min(min int) *StringSchema {
 	s.rules = append(s.rules, func(ctx *Context) {
-		if len(ctx.Value.(string)) < min {
+		ctxValue, ok := ctx.Value.(string)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if len(ctxValue) < min {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min))
 		}
 	})
@@ -71,7 +76,12 @@ func (s *StringSchema) Min(min int) *StringSchema {
 
 func (s *StringSchema) Max(max int) *StringSchema {
 	s.rules = append(s.rules, func(ctx *Context) {
-		if len(ctx.Value.(string)) > max {
+		ctxValue, ok := ctx.Value.(string)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if len(ctxValue) > max {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max))
 		}
 	})
@@ -80,7 +90,12 @@ func (s *StringSchema) Max(max int) *StringSchema {
 
 func (s *StringSchema) Length(length int) *StringSchema {
 	s.rules = append(s.rules, func(ctx *Context) {
-		if len(ctx.Value.(string)) != length {
+		ctxValue, ok := ctx.Value.(string)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if len(ctxValue) != length {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length))
 		}
 	})
@@ -90,7 +105,12 @@ func (s *StringSchema) Length(length int) *StringSchema {
 func (s *StringSchema) Regex(regex string) *StringSchema {
 	re := regexp.MustCompile(regex)
 	s.rules = append(s.rules, func(ctx *Context) {
-		if !re.MatchString(ctx.Value.(string)) {
+		ctxValue, ok := ctx.Value.(string)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if !re.MatchString(ctxValue) {
 			ctx.Abort(fmt.Errorf("field `%s` value %s not match with %s", ctx.FieldPath(), ctx.Value, regex))
 		}
 	})
@@ -107,6 +127,11 @@ func (s *StringSchema) Validate(ctx *Context) {
 		rule(ctx)
 		if ctx.skip {
 			return
+		}
+	}
+	if ctx.err == nil {
+		if _, ok := (ctx.Value).(string); !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
 		}
 	}
 }

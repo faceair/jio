@@ -45,7 +45,12 @@ func (a *ArraySchema) Default(value []interface{}) *ArraySchema {
 
 func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		for _, rv := range ctx.Value.([]interface{}) {
+		ctxValue, ok := ctx.Value.([]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		for _, rv := range ctxValue {
 			var isValid bool
 			for _, v := range values {
 				if schema, ok := v.(Schema); ok {
@@ -72,7 +77,12 @@ func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 
 func (a *ArraySchema) Min(min int) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		if len(ctx.Value.([]interface{})) < min {
+		ctxValue, ok := ctx.Value.([]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if len(ctxValue) < min {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min))
 		}
 	})
@@ -81,7 +91,12 @@ func (a *ArraySchema) Min(min int) *ArraySchema {
 
 func (a *ArraySchema) Max(max int) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		if len(ctx.Value.([]interface{})) > max {
+		ctxValue, ok := ctx.Value.([]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if len(ctxValue) > max {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max))
 		}
 	})
@@ -90,7 +105,12 @@ func (a *ArraySchema) Max(max int) *ArraySchema {
 
 func (a *ArraySchema) Length(length int) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		if len(ctx.Value.([]interface{})) != length {
+		ctxValue, ok := ctx.Value.([]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if len(ctxValue) != length {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length))
 		}
 	})
@@ -107,6 +127,11 @@ func (a *ArraySchema) Validate(ctx *Context) {
 		rule(ctx)
 		if ctx.skip {
 			return
+		}
+	}
+	if ctx.err == nil {
+		if _, ok := (ctx.Value).([]interface{}); !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 		}
 	}
 }

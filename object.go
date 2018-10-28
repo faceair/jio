@@ -47,9 +47,14 @@ func (o *ObjectSchema) Default(value map[string]interface{}) *ObjectSchema {
 
 func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 	o.rules = append(o.rules, func(ctx *Context) {
+		ctxValue, ok := ctx.Value.(map[string]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
+			return
+		}
 		jsonNew := make(map[string]interface{})
 		for key, schema := range children {
-			value, _ := ctx.Value.(map[string]interface{})[key]
+			value, _ := ctxValue[key]
 			ctxNew := &Context{
 				Fields: append(ctx.Fields, key),
 				Value:  value,
@@ -76,6 +81,11 @@ func (o *ObjectSchema) Validate(ctx *Context) {
 		rule(ctx)
 		if ctx.skip {
 			return
+		}
+	}
+	if ctx.err == nil {
+		if _, ok := (ctx.Value).(map[string]interface{}); !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
 		}
 	}
 }

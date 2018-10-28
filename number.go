@@ -62,7 +62,12 @@ func (n *NumberSchema) Valid(values ...float64) *NumberSchema {
 
 func (n *NumberSchema) Min(min float64) *NumberSchema {
 	n.rules = append(n.rules, func(ctx *Context) {
-		if ctx.Value.(float64) < min {
+		ctxValue, ok := ctx.Value.(float64)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if ctxValue < min {
 			ctx.Abort(fmt.Errorf("field `%s` value %v less than %v", ctx.FieldPath(), ctx.Value, min))
 		}
 	})
@@ -71,7 +76,12 @@ func (n *NumberSchema) Min(min float64) *NumberSchema {
 
 func (n *NumberSchema) Max(max float64) *NumberSchema {
 	n.rules = append(n.rules, func(ctx *Context) {
-		if ctx.Value.(float64) > max {
+		ctxValue, ok := ctx.Value.(float64)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		if ctxValue > max {
 			ctx.Abort(fmt.Errorf("field `%s` value %v exceeded %v", ctx.FieldPath(), ctx.Value, max))
 		}
 	})
@@ -80,21 +90,36 @@ func (n *NumberSchema) Max(max float64) *NumberSchema {
 
 func (n *NumberSchema) Ceil() *NumberSchema {
 	n.rules = append(n.rules, func(ctx *Context) {
-		ctx.Value = math.Ceil(ctx.Value.(float64))
+		ctxValue, ok := ctx.Value.(float64)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		ctx.Value = math.Ceil(ctxValue)
 	})
 	return n
 }
 
 func (n *NumberSchema) Floor() *NumberSchema {
 	n.rules = append(n.rules, func(ctx *Context) {
-		ctx.Value = math.Floor(ctx.Value.(float64))
+		ctxValue, ok := ctx.Value.(float64)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		ctx.Value = math.Floor(ctxValue)
 	})
 	return n
 }
 
 func (n *NumberSchema) Round() *NumberSchema {
 	n.rules = append(n.rules, func(ctx *Context) {
-		ctx.Value = math.Floor(ctx.Value.(float64) + 0.5)
+		ctxValue, ok := ctx.Value.(float64)
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		ctx.Value = math.Floor(ctxValue + 0.5)
 	})
 	return n
 }
@@ -104,6 +129,11 @@ func (n *NumberSchema) Validate(ctx *Context) {
 		rule(ctx)
 		if ctx.skip {
 			return
+		}
+	}
+	if ctx.err == nil {
+		if _, ok := (ctx.Value).(float64); !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
 		}
 	}
 }
