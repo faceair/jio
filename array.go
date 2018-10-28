@@ -2,6 +2,7 @@ package jio
 
 import (
 	"fmt"
+	"reflect"
 )
 
 var _ Schema = new(ArraySchema)
@@ -49,12 +50,13 @@ func (a *ArraySchema) Default(value []interface{}) *ArraySchema {
 
 func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		ctxValue, ok := ctx.Value.([]interface{})
-		if !ok {
+		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		for _, rv := range ctxValue {
+		ctxRV := reflect.ValueOf(ctx.Value)
+		for i := 0; i < ctxRV.Len(); i++ {
+			rv := ctxRV.Index(i).Interface()
 			var isValid bool
 			for _, v := range values {
 				if schema, ok := v.(Schema); ok {
@@ -81,12 +83,11 @@ func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 
 func (a *ArraySchema) Min(min int) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		ctxValue, ok := ctx.Value.([]interface{})
-		if !ok {
+		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		if len(ctxValue) < min {
+		if reflect.ValueOf(ctx.Value).Len() < min {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min))
 		}
 	})
@@ -95,12 +96,11 @@ func (a *ArraySchema) Min(min int) *ArraySchema {
 
 func (a *ArraySchema) Max(max int) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		ctxValue, ok := ctx.Value.([]interface{})
-		if !ok {
+		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		if len(ctxValue) > max {
+		if reflect.ValueOf(ctx.Value).Len() > max {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max))
 		}
 	})
@@ -109,12 +109,11 @@ func (a *ArraySchema) Max(max int) *ArraySchema {
 
 func (a *ArraySchema) Length(length int) *ArraySchema {
 	a.rules = append(a.rules, func(ctx *Context) {
-		ctxValue, ok := ctx.Value.([]interface{})
-		if !ok {
+		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		if len(ctxValue) != length {
+		if reflect.ValueOf(ctx.Value).Len() != length {
 			ctx.Abort(fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length))
 		}
 	})
@@ -137,7 +136,7 @@ func (a *ArraySchema) Validate(ctx *Context) {
 		}
 	}
 	if ctx.err == nil {
-		if _, ok := (ctx.Value).([]interface{}); !ok {
+		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 		}
 	}
