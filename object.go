@@ -8,7 +8,7 @@ type K map[string]Schema
 
 func Object() *ObjectSchema {
 	return &ObjectSchema{
-		rules: make([]func(string, map[string]interface{}) (map[string]interface{}, error), 0, 3),
+		rules: make([]func(*Context) error, 0, 3),
 	}
 }
 
@@ -17,7 +17,7 @@ var _ Schema = new(ObjectSchema)
 type ObjectSchema struct {
 	required     *bool
 	defaultValue *map[string]interface{}
-	rules        []func(string, map[string]interface{}) (map[string]interface{}, error)
+	rules        []func(*Context) error
 }
 
 func (o *ObjectSchema) Required() *ObjectSchema {
@@ -35,53 +35,54 @@ func (o *ObjectSchema) Default(defaultValue map[string]interface{}) *ObjectSchem
 }
 
 func (o *ObjectSchema) Keys(children K) *ObjectSchema {
-	o.rules = append(o.rules, func(field string, jsonRaw map[string]interface{}) (map[string]interface{}, error) {
+	o.rules = append(o.rules, func(ctx *Context) error {
 		jsonNew := make(map[string]interface{})
 		for key, schema := range children {
-			value, _ := jsonRaw[key]
-			if len(field) != 0 {
-				key = fmt.Sprintf("%s.%s", field, key)
+			value, _ := ctx.Value.(map[string]interface{})[key]
+			ctxNew := &Context{
+				Fields: append(ctx.Fields, key),
+				Value:  value,
 			}
-			newValue, err := schema.Validate(key, value)
+			err := schema.Validate(ctxNew)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			jsonNew[key] = newValue
+			jsonNew[key] = ctxNew.Value
 		}
-		return jsonNew, nil
+		ctx.Value = jsonNew
+		return nil
 	})
 	return o
 }
 
-func (o *ObjectSchema) Transform(f func(string, map[string]interface{}) (map[string]interface{}, error)) *ObjectSchema {
+func (o *ObjectSchema) Transform(f func(*Context) error) *ObjectSchema {
 	o.rules = append(o.rules, f)
 	return o
 }
 
-func (o *ObjectSchema) Validate(field string, raw interface{}) (interface{}, error) {
+func (o *ObjectSchema) Validate(ctx *Context) (err error) {
 	if o.isRequired() {
-		if raw == nil {
-			return nil, fmt.Errorf("field `%s` is required", field)
+		if ctx.Value == nil {
+			return fmt.Errorf("field `%s` is required", ctx.FieldPath())
 		}
 	} else {
-		if raw == nil {
+		if ctx.Value == nil {
 			if o.defaultValue != nil {
-				raw = *o.defaultValue
+				ctx.Value = *o.defaultValue
 			} else {
-				return raw, nil
+				return nil
 			}
 		}
 	}
-	jsonRaw, ok := (raw).(map[string]interface{})
+	_, ok := (ctx.Value).(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("field `%s` value %v is not object", field, raw)
+		return fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value)
 	}
-	var err error
 	for _, rule := range o.rules {
-		jsonRaw, err = rule(field, jsonRaw)
+		err = rule(ctx)
 		if err != nil {
-			return jsonRaw, err
+			return
 		}
 	}
-	return jsonRaw, nil
+	return nil
 }

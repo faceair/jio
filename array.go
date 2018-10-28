@@ -1,19 +1,21 @@
 package jio
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var _ Schema = new(ArraySchema)
 
 func Array() *ArraySchema {
 	return &ArraySchema{
-		rules: make([]func(string, []interface{}) ([]interface{}, error), 0, 3),
+		rules: make([]func(*Context) error, 0, 3),
 	}
 }
 
 type ArraySchema struct {
 	required     *bool
 	defaultValue *interface{}
-	rules        []func(string, []interface{}) ([]interface{}, error)
+	rules        []func(*Context) error
 }
 
 func (a *ArraySchema) Required() *ArraySchema {
@@ -31,12 +33,12 @@ func (a *ArraySchema) Default(value interface{}) *ArraySchema {
 }
 
 func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
-	a.rules = append(a.rules, func(field string, raw []interface{}) ([]interface{}, error) {
-		for _, rv := range raw {
+	a.rules = append(a.rules, func(ctx *Context) (err error) {
+		for _, rv := range ctx.Value.([]interface{}) {
 			var isValid bool
 			for _, v := range values {
 				if schema, ok := v.(Schema); ok {
-					_, err := schema.Validate(field, rv)
+					err = schema.Validate(&Context{ctx.Fields, rv})
 					if err == nil {
 						isValid = true
 						break
@@ -49,73 +51,71 @@ func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 				}
 			}
 			if !isValid {
-				return nil, fmt.Errorf("field `%s` value %v is not valid type", field, rv)
+				return fmt.Errorf("field `%s` value %v is not valid type", ctx.FieldPath(), rv)
 			}
 		}
-		return raw, nil
+		return nil
 	})
 	return a
 }
 
 func (a *ArraySchema) Min(min int) *ArraySchema {
-	a.rules = append(a.rules, func(field string, raw []interface{}) ([]interface{}, error) {
-		if len(raw) < min {
-			return nil, fmt.Errorf("field `%s` value %s length less than %d", field, raw, min)
+	a.rules = append(a.rules, func(ctx *Context) error {
+		if len(ctx.Value.([]interface{})) < min {
+			return fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min)
 		}
-		return raw, nil
+		return nil
 	})
 	return a
 }
 
 func (a *ArraySchema) Max(max int) *ArraySchema {
-	a.rules = append(a.rules, func(field string, raw []interface{}) ([]interface{}, error) {
-		if len(raw) > max {
-			return nil, fmt.Errorf("field `%s` value %s length exceeded %d", field, raw, max)
+	a.rules = append(a.rules, func(ctx *Context) error {
+		if len(ctx.Value.([]interface{})) > max {
+			return fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max)
 		}
-		return raw, nil
+		return nil
 	})
 	return a
 }
 
 func (a *ArraySchema) Length(length int) *ArraySchema {
-	a.rules = append(a.rules, func(field string, raw []interface{}) ([]interface{}, error) {
-		if len(raw) != length {
-			return nil, fmt.Errorf("field `%s` value %s length not equal to %d", field, raw, length)
+	a.rules = append(a.rules, func(ctx *Context) error {
+		if len(ctx.Value.([]interface{})) != length {
+			return fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length)
 		}
-		return raw, nil
+		return nil
 	})
 	return a
 }
 
-func (a *ArraySchema) Transform(f func(field string, raw []interface{}) ([]interface{}, error)) Schema {
+func (a *ArraySchema) Transform(f func(*Context) error) *ArraySchema {
 	a.rules = append(a.rules, f)
 	return a
 }
 
-func (a *ArraySchema) Validate(field string, raw interface{}) (interface{}, error) {
+func (a *ArraySchema) Validate(ctx *Context) (err error) {
 	if a.isRequired() {
-		if raw == nil {
-			return nil, fmt.Errorf("field `%s` is required", field)
+		if ctx.Value == nil {
+			return fmt.Errorf("field `%s` is required", ctx.FieldPath())
 		}
 	} else {
-		if raw == nil {
+		if ctx.Value == nil {
 			if a.defaultValue != nil {
-				raw = *a.defaultValue
+				ctx.Value = *a.defaultValue
 			} else {
-				return raw, nil
+				return nil
 			}
 		}
 	}
-	arrRaw, ok := raw.([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("field `%s` value %s is not array", field, raw)
+	if _, ok := ctx.Value.([]interface{}); !ok {
+		return fmt.Errorf("field `%s` value %s is not array", ctx.FieldPath(), ctx.Value)
 	}
-	var err error
 	for _, rule := range a.rules {
-		raw, err = rule(field, arrRaw)
+		err = rule(ctx)
 		if err != nil {
-			return raw, err
+			return
 		}
 	}
-	return raw, nil
+	return
 }

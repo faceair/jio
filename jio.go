@@ -2,20 +2,19 @@ package jio
 
 import "encoding/json"
 
-func ValidateJSON(dataRaw *[]byte, schema Schema) error {
+func ValidateJSON(dataRaw *[]byte, schema Schema) (err error) {
 	jsonRaw := make(map[string]interface{})
-	err := json.Unmarshal(*dataRaw, &jsonRaw)
-	if err != nil {
+	if err = json.Unmarshal(*dataRaw, &jsonRaw); err != nil {
 		return err
 	}
-	jsonNew, err := schema.Validate("", jsonRaw)
-	if err != nil {
+	ctx := &Context{[]string{}, jsonRaw}
+	if err = schema.Validate(ctx); err != nil {
 		return err
 	}
-	dataNew, err := json.Marshal(jsonNew)
+	dataNew, err := json.Marshal(ctx.Value)
 	if err != nil {
 		return err
 	}
 	*dataRaw = dataNew
-	return nil
+	return
 }

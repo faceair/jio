@@ -4,7 +4,7 @@ import "fmt"
 
 func Bool() *BoolSchema {
 	return &BoolSchema{
-		rules: make([]func(string, interface{}) (interface{}, error), 0, 3),
+		rules: make([]func(*Context) error, 0, 3),
 	}
 }
 
@@ -13,7 +13,7 @@ var _ Schema = new(BoolSchema)
 type BoolSchema struct {
 	required     *bool
 	defaultValue *bool
-	rules        []func(string, interface{}) (interface{}, error)
+	rules        []func(*Context) error
 }
 
 func (b *BoolSchema) Required() *BoolSchema {
@@ -31,53 +31,53 @@ func (b *BoolSchema) Default(value bool) *BoolSchema {
 }
 
 func (b *BoolSchema) Truthy(values ...interface{}) *BoolSchema {
-	b.rules = append(b.rules, func(field string, raw interface{}) (interface{}, error) {
+	b.rules = append(b.rules, func(ctx *Context) error {
 		for _, v := range values {
-			if v == raw {
-				return true, nil
+			if v == ctx.Value {
+				ctx.Value = true
+				return nil
 			}
 		}
-		return raw, nil
+		return nil
 	})
 	return b
 }
 
 func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
-	b.rules = append(b.rules, func(field string, raw interface{}) (interface{}, error) {
+	b.rules = append(b.rules, func(ctx *Context) error {
 		for _, v := range values {
-			if v == raw {
-				return false, nil
+			if v == ctx.Value {
+				ctx.Value = false
+				return nil
 			}
 		}
-		return raw, nil
+		return nil
 	})
 	return b
 }
 
-func (b *BoolSchema) Validate(field string, raw interface{}) (interface{}, error) {
+func (b *BoolSchema) Validate(ctx *Context) (err error) {
 	if b.isRequired() {
-		if raw == nil {
-			return nil, fmt.Errorf("field `%s` is required", field)
+		if ctx.Value == nil {
+			return fmt.Errorf("field `%s` is required", ctx.FieldPath())
 		}
 	} else {
-		if raw == nil {
+		if ctx.Value == nil {
 			if b.defaultValue != nil {
-				raw = *b.defaultValue
+				ctx.Value = *b.defaultValue
 			} else {
-				return raw, nil
+				return nil
 			}
 		}
 	}
-	var err error
 	for _, rule := range b.rules {
-		raw, err = rule(field, raw)
+		err = rule(ctx)
 		if err != nil {
-			return raw, err
+			return
 		}
 	}
-	boolRaw, ok := (raw).(bool)
-	if !ok {
-		return nil, fmt.Errorf("field `%s` value %v is not boolean", field, raw)
+	if _, ok := (ctx.Value).(bool); !ok {
+		return fmt.Errorf("field `%s` value %v is not boolean", ctx.FieldPath(), ctx.Value)
 	}
-	return boolRaw, nil
+	return
 }

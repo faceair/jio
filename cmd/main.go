@@ -13,11 +13,11 @@ func main() {
 		"is": "yes"
 	}`)
 	schema := jio.Object().Keys(jio.K{
-		"debug": jio.String().Valid("on", "off").Transform(func(_, raw string) (string, error) {
-			if raw == "on" {
-				return "off", nil
+		"debug": jio.String().Valid("on", "off").Transform(func(ctx *jio.Context) error {
+			if ctx.Value.(string) == "on" {
+				ctx.Value = "off"
 			}
-			return raw, nil
+			return nil
 		}),
 		"title": jio.String().Default("测试"),
 		"list":  jio.Array().Valid("hi", jio.Number()),
