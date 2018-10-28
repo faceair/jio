@@ -14,33 +14,37 @@ func String() *StringSchema {
 var _ Schema = new(StringSchema)
 
 type StringSchema struct {
-	rules []func(*Context)
+	required *bool
+	rules    []func(*Context)
 }
 
 func (s *StringSchema) Required() *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) {
+	s.required = boolPtr(true)
+	s.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	})
+	}}, s.rules...)
 	return s
 }
 
 func (s *StringSchema) Optional() *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) {
+	s.required = boolPtr(false)
+	s.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	})
+	}}, s.rules...)
 	return s
 }
 
 func (s *StringSchema) Default(value string) *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) {
+	s.required = boolPtr(false)
+	s.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	})
+	}}, s.rules...)
 	return s
 }
 
@@ -123,6 +127,9 @@ func (s *StringSchema) Transform(f func(*Context)) *StringSchema {
 }
 
 func (s *StringSchema) Validate(ctx *Context) {
+	if s.required == nil {
+		s.Optional()
+	}
 	for _, rule := range s.rules {
 		rule(ctx)
 		if ctx.skip {

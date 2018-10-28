@@ -11,33 +11,37 @@ func Bool() *BoolSchema {
 var _ Schema = new(BoolSchema)
 
 type BoolSchema struct {
-	rules []func(*Context)
+	required *bool
+	rules    []func(*Context)
 }
 
 func (b *BoolSchema) Required() *BoolSchema {
-	b.rules = append(b.rules, func(ctx *Context) {
+	b.required = boolPtr(true)
+	b.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	})
+	}}, b.rules...)
 	return b
 }
 
 func (b *BoolSchema) Optional() *BoolSchema {
-	b.rules = append(b.rules, func(ctx *Context) {
+	b.required = boolPtr(false)
+	b.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	})
+	}}, b.rules...)
 	return b
 }
 
 func (b *BoolSchema) Default(value bool) *BoolSchema {
-	b.rules = append(b.rules, func(ctx *Context) {
+	b.required = boolPtr(false)
+	b.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	})
+	}}, b.rules...)
 	return b
 }
 
@@ -64,6 +68,9 @@ func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
 }
 
 func (b *BoolSchema) Validate(ctx *Context) {
+	if b.required == nil {
+		b.Optional()
+	}
 	for _, rule := range b.rules {
 		rule(ctx)
 		if ctx.skip {

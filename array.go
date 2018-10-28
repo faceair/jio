@@ -13,33 +13,37 @@ func Array() *ArraySchema {
 }
 
 type ArraySchema struct {
-	rules []func(*Context)
+	required *bool
+	rules    []func(*Context)
 }
 
 func (a *ArraySchema) Required() *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	a.required = boolPtr(true)
+	a.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	})
+	}}, a.rules...)
 	return a
 }
 
 func (a *ArraySchema) Optional() *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	a.required = boolPtr(false)
+	a.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	})
+	}}, a.rules...)
 	return a
 }
 
 func (a *ArraySchema) Default(value []interface{}) *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	a.required = boolPtr(false)
+	a.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	})
+	}}, a.rules...)
 	return a
 }
 
@@ -123,6 +127,9 @@ func (a *ArraySchema) Transform(f func(*Context)) *ArraySchema {
 }
 
 func (a *ArraySchema) Validate(ctx *Context) {
+	if a.required == nil {
+		a.Optional()
+	}
 	for _, rule := range a.rules {
 		rule(ctx)
 		if ctx.skip {

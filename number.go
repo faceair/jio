@@ -14,33 +14,37 @@ func Number() *NumberSchema {
 var _ Schema = new(NumberSchema)
 
 type NumberSchema struct {
-	rules []func(*Context)
+	required *bool
+	rules    []func(*Context)
 }
 
 func (n *NumberSchema) Required() *NumberSchema {
-	n.rules = append(n.rules, func(ctx *Context) {
+	n.required = boolPtr(true)
+	n.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	})
+	}}, n.rules...)
 	return n
 }
 
 func (n *NumberSchema) Optional() *NumberSchema {
-	n.rules = append(n.rules, func(ctx *Context) {
+	n.required = boolPtr(false)
+	n.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	})
+	}}, n.rules...)
 	return n
 }
 
 func (n *NumberSchema) Default(value float64) *NumberSchema {
-	n.rules = append(n.rules, func(ctx *Context) {
+	n.required = boolPtr(false)
+	n.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	})
+	}}, n.rules...)
 	return n
 }
 
@@ -125,6 +129,9 @@ func (n *NumberSchema) Round() *NumberSchema {
 }
 
 func (n *NumberSchema) Validate(ctx *Context) {
+	if n.required == nil {
+		n.Optional()
+	}
 	for _, rule := range n.rules {
 		rule(ctx)
 		if ctx.skip {

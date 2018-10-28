@@ -15,33 +15,37 @@ func Object() *ObjectSchema {
 var _ Schema = new(ObjectSchema)
 
 type ObjectSchema struct {
-	rules []func(*Context)
+	required *bool
+	rules    []func(*Context)
 }
 
 func (o *ObjectSchema) Required() *ObjectSchema {
-	o.rules = append(o.rules, func(ctx *Context) {
+	o.required = boolPtr(true)
+	o.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	})
+	}}, o.rules...)
 	return o
 }
 
 func (o *ObjectSchema) Optional() *ObjectSchema {
-	o.rules = append(o.rules, func(ctx *Context) {
+	o.required = boolPtr(false)
+	o.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	})
+	}}, o.rules...)
 	return o
 }
 
 func (o *ObjectSchema) Default(value map[string]interface{}) *ObjectSchema {
-	o.rules = append(o.rules, func(ctx *Context) {
+	o.required = boolPtr(false)
+	o.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	})
+	}}, o.rules...)
 	return o
 }
 
@@ -77,6 +81,9 @@ func (o *ObjectSchema) Transform(f func(*Context)) *ObjectSchema {
 }
 
 func (o *ObjectSchema) Validate(ctx *Context) {
+	if o.required == nil {
+		o.Optional()
+	}
 	for _, rule := range o.rules {
 		rule(ctx)
 		if ctx.skip {

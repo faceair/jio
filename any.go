@@ -8,6 +8,10 @@ type Schema interface {
 	Validate(*Context)
 }
 
+func boolPtr(value bool) *bool {
+	return &value
+}
+
 var _ Schema = new(AnySchema)
 
 func Any() *AnySchema {
@@ -17,33 +21,37 @@ func Any() *AnySchema {
 }
 
 type AnySchema struct {
-	rules []func(*Context)
+	required *bool
+	rules    []func(*Context)
 }
 
 func (a *AnySchema) Required() *AnySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	a.required = boolPtr(true)
+	a.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	})
+	}}, a.rules...)
 	return a
 }
 
 func (a *AnySchema) Optional() *AnySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	a.required = boolPtr(false)
+	a.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	})
+	}}, a.rules...)
 	return a
 }
 
 func (a *AnySchema) Default(value interface{}) *AnySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	a.required = boolPtr(false)
+	a.rules = append([]func(*Context){func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	})
+	}}, a.rules...)
 	return a
 }
 
@@ -70,6 +78,9 @@ func (a *AnySchema) Transform(f func(*Context)) *AnySchema {
 }
 
 func (a *AnySchema) Validate(ctx *Context) {
+	if a.required == nil {
+		a.Optional()
+	}
 	for _, rule := range a.rules {
 		rule(ctx)
 		if ctx.skip {
