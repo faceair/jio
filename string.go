@@ -7,34 +7,45 @@ import (
 
 func String() *StringSchema {
 	return &StringSchema{
-		rules: make([]func(*Context) error, 0, 3),
+		rules: make([]func(*Context), 0, 3),
 	}
 }
 
 var _ Schema = new(StringSchema)
 
 type StringSchema struct {
-	required     *bool
-	defaultValue *string
-	rules        []func(*Context) error
+	rules []func(*Context)
 }
 
 func (s *StringSchema) Required() *StringSchema {
-	s.required = boolPtr(true)
+	s.rules = append(s.rules, func(ctx *Context) {
+		if ctx.Value == nil {
+			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
+		}
+	})
 	return s
 }
 
-func (s *StringSchema) isRequired() bool {
-	return s.required != nil && *s.required
+func (s *StringSchema) Optional() *StringSchema {
+	s.rules = append(s.rules, func(ctx *Context) {
+		if ctx.Value == nil {
+			ctx.Skip()
+		}
+	})
+	return s
 }
 
-func (s *StringSchema) Default(defaultValue string) *StringSchema {
-	s.defaultValue = &defaultValue
+func (s *StringSchema) Default(value string) *StringSchema {
+	s.rules = append(s.rules, func(ctx *Context) {
+		if ctx.Value == nil {
+			ctx.Value = value
+		}
+	})
 	return s
 }
 
 func (s *StringSchema) Valid(values ...string) *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) error {
+	s.rules = append(s.rules, func(ctx *Context) {
 		var isValid bool
 		for _, v := range values {
 			if v == ctx.Value {
@@ -43,81 +54,59 @@ func (s *StringSchema) Valid(values ...string) *StringSchema {
 			}
 		}
 		if !isValid {
-			return fmt.Errorf("field `%s` value %v is not in %v", ctx.FieldPath(), ctx.Value, values)
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not in %v", ctx.FieldPath(), ctx.Value, values))
 		}
-		return nil
 	})
 	return s
 }
 
 func (s *StringSchema) Min(min int) *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) error {
+	s.rules = append(s.rules, func(ctx *Context) {
 		if len(ctx.Value.(string)) < min {
-			return fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min)
+			ctx.Abort(fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min))
 		}
-		return nil
 	})
 	return s
 }
 
 func (s *StringSchema) Max(max int) *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) error {
+	s.rules = append(s.rules, func(ctx *Context) {
 		if len(ctx.Value.(string)) > max {
-			return fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max)
+			ctx.Abort(fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max))
 		}
-		return nil
 	})
 	return s
 }
 
 func (s *StringSchema) Length(length int) *StringSchema {
-	s.rules = append(s.rules, func(ctx *Context) error {
+	s.rules = append(s.rules, func(ctx *Context) {
 		if len(ctx.Value.(string)) != length {
-			return fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length)
+			ctx.Abort(fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length))
 		}
-		return nil
 	})
 	return s
 }
 
 func (s *StringSchema) Regex(regex string) *StringSchema {
 	re := regexp.MustCompile(regex)
-	s.rules = append(s.rules, func(ctx *Context) error {
+	s.rules = append(s.rules, func(ctx *Context) {
 		if !re.MatchString(ctx.Value.(string)) {
-			return fmt.Errorf("field `%s` value %s not match with %s", ctx.FieldPath(), ctx.Value, regex)
+			ctx.Abort(fmt.Errorf("field `%s` value %s not match with %s", ctx.FieldPath(), ctx.Value, regex))
 		}
-		return nil
 	})
 	return s
 }
 
-func (s *StringSchema) Transform(f func(*Context) error) *StringSchema {
+func (s *StringSchema) Transform(f func(*Context)) *StringSchema {
 	s.rules = append(s.rules, f)
 	return s
 }
 
-func (s *StringSchema) Validate(ctx *Context) (err error) {
-	if s.isRequired() {
-		if ctx.Value == nil {
-			return fmt.Errorf("field `%s` is required", ctx.FieldPath())
-		}
-	} else {
-		if ctx.Value == nil {
-			if s.defaultValue != nil {
-				ctx.Value = *s.defaultValue
-			} else {
-				return nil
-			}
-		}
-	}
-	if _, ok := (ctx.Value).(string); !ok {
-		return fmt.Errorf("field `%s` value %s is not string", ctx.FieldPath(), ctx.Value)
-	}
+func (s *StringSchema) Validate(ctx *Context) {
 	for _, rule := range s.rules {
-		err = rule(ctx)
-		if err != nil {
+		rule(ctx)
+		if ctx.skip {
 			return
 		}
 	}
-	return
 }

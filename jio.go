@@ -7,9 +7,10 @@ func ValidateJSON(dataRaw *[]byte, schema Schema) (err error) {
 	if err = json.Unmarshal(*dataRaw, &jsonRaw); err != nil {
 		return err
 	}
-	ctx := &Context{[]string{}, jsonRaw}
-	if err = schema.Validate(ctx); err != nil {
-		return err
+	ctx := NewContext(jsonRaw)
+	schema.Validate(ctx)
+	if ctx.err != nil {
+		return ctx.err
 	}
 	dataNew, err := json.Marshal(ctx.Value)
 	if err != nil {
