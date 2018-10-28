@@ -35,13 +35,21 @@ func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 		for _, rv := range raw {
 			var isValid bool
 			for _, v := range values {
-				if v == rv {
-					isValid = true
-					break
+				if schema, ok := v.(Schema); ok {
+					_, err := schema.Validate(field, rv)
+					if err == nil {
+						isValid = true
+						break
+					}
+				} else {
+					if v == rv {
+						isValid = true
+						break
+					}
 				}
 			}
 			if !isValid {
-				return nil, fmt.Errorf("field `%s` value %v is not in %v", field, rv, values)
+				return nil, fmt.Errorf("field `%s` value %v is not valid type", field, rv)
 			}
 		}
 		return raw, nil

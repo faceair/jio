@@ -20,7 +20,7 @@ func main() {
 			return raw, nil
 		}),
 		"title": jio.String().Default("测试"),
-		"list":  jio.Array().Valid(1.0, "hi"),
+		"list":  jio.Array().Valid("hi", jio.Number()),
 		"is":    jio.Bool().Truthy("true", "yes").Required(),
 	})
 	err := jio.ValidateJSON(&data, schema)
