@@ -11,60 +11,71 @@ func Bool() *BoolSchema {
 var _ Schema = new(BoolSchema)
 
 type BoolSchema struct {
+	baseSchema
+
 	required *bool
 	rules    []func(*Context)
 }
 
+func (b *BoolSchema) PrependTransform(f func(*Context)) *BoolSchema {
+	b.rules = append([]func(*Context){f}, b.rules...)
+	return b
+}
+
+func (b *BoolSchema) Transform(f func(*Context)) *BoolSchema {
+	b.rules = append(b.rules, f)
+	return b
+}
+
 func (b *BoolSchema) Required() *BoolSchema {
 	b.required = boolPtr(true)
-	b.rules = append([]func(*Context){func(ctx *Context) {
+	return b.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	}}, b.rules...)
-	return b
+	})
 }
 
 func (b *BoolSchema) Optional() *BoolSchema {
 	b.required = boolPtr(false)
-	b.rules = append([]func(*Context){func(ctx *Context) {
+	return b.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	}}, b.rules...)
-	return b
+	})
 }
 
 func (b *BoolSchema) Default(value bool) *BoolSchema {
 	b.required = boolPtr(false)
-	b.rules = append([]func(*Context){func(ctx *Context) {
+	return b.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	}}, b.rules...)
-	return b
+	})
+}
+
+func (b *BoolSchema) When(refPath string, condition interface{}, then Schema) *BoolSchema {
+	return b.Transform(func(ctx *Context) { b.when(ctx, refPath, condition, then) })
 }
 
 func (b *BoolSchema) Truthy(values ...interface{}) *BoolSchema {
-	b.rules = append(b.rules, func(ctx *Context) {
+	return b.Transform(func(ctx *Context) {
 		for _, v := range values {
 			if v == ctx.Value {
 				ctx.Value = true
 			}
 		}
 	})
-	return b
 }
 
 func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
-	b.rules = append(b.rules, func(ctx *Context) {
+	return b.Transform(func(ctx *Context) {
 		for _, v := range values {
 			if v == ctx.Value {
 				ctx.Value = false
 			}
 		}
 	})
-	return b
 }
 
 func (b *BoolSchema) Validate(ctx *Context) {

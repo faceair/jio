@@ -1,6 +1,7 @@
 package jio
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -14,47 +15,68 @@ func Array() *ArraySchema {
 }
 
 type ArraySchema struct {
+	baseSchema
+
 	required *bool
 	rules    []func(*Context)
 }
 
+func (a *ArraySchema) PrependTransform(f func(*Context)) *ArraySchema {
+	a.rules = append([]func(*Context){f}, a.rules...)
+	return a
+}
+
+func (a *ArraySchema) Transform(f func(*Context)) *ArraySchema {
+	a.rules = append(a.rules, f)
+	return a
+}
+
 func (a *ArraySchema) Required() *ArraySchema {
 	a.required = boolPtr(true)
-	a.rules = append([]func(*Context){func(ctx *Context) {
+	return a.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	}}, a.rules...)
-	return a
+	})
 }
 
 func (a *ArraySchema) Optional() *ArraySchema {
 	a.required = boolPtr(false)
-	a.rules = append([]func(*Context){func(ctx *Context) {
+	return a.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	}}, a.rules...)
-	return a
+	})
 }
 
-func (a *ArraySchema) Default(value []interface{}) *ArraySchema {
+func (a *ArraySchema) Default(value interface{}) *ArraySchema {
 	a.required = boolPtr(false)
-	a.rules = append([]func(*Context){func(ctx *Context) {
+	return a.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	}}, a.rules...)
-	return a
+	})
 }
 
-func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+func (a *ArraySchema) When(refPath string, condition interface{}, then Schema) *ArraySchema {
+	return a.Transform(func(ctx *Context) { a.when(ctx, refPath, condition, then) })
+}
+
+func (a *ArraySchema) Check(f func(interface{}) error) *ArraySchema {
+	return a.Transform(func(ctx *Context) {
 		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		ctxRV := reflect.ValueOf(ctx.Value)
+		if err := f(ctx.Value); err != nil {
+			ctx.Abort(fmt.Errorf("field `%s` value %v %s", ctx.FieldPath(), ctx.Value, err.Error()))
+		}
+	})
+}
+
+func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
+	return a.Check(func(ctxValue interface{}) error {
+		ctxRV := reflect.ValueOf(ctxValue)
 		for i := 0; i < ctxRV.Len(); i++ {
 			rv := ctxRV.Index(i).Interface()
 			var isValid bool
@@ -74,55 +96,38 @@ func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
 				}
 			}
 			if !isValid {
-				ctx.Abort(fmt.Errorf("field `%s` value %v is not valid type", ctx.FieldPath(), rv))
+				return errors.New("not valid type")
 			}
 		}
+		return nil
 	})
-	return a
 }
 
 func (a *ArraySchema) Min(min int) *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
-		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
-			return
+	return a.Check(func(ctxValue interface{}) error {
+		if reflect.ValueOf(ctxValue).Len() < min {
+			return fmt.Errorf("length less than %d", min)
 		}
-		if reflect.ValueOf(ctx.Value).Len() < min {
-			ctx.Abort(fmt.Errorf("field `%s` value %s length less than %d", ctx.FieldPath(), ctx.Value, min))
-		}
+		return nil
 	})
-	return a
 }
 
 func (a *ArraySchema) Max(max int) *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
-		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
-			return
+	return a.Check(func(ctxValue interface{}) error {
+		if reflect.ValueOf(ctxValue).Len() > max {
+			return fmt.Errorf("length exceeded %d", max)
 		}
-		if reflect.ValueOf(ctx.Value).Len() > max {
-			ctx.Abort(fmt.Errorf("field `%s` value %s length exceeded %d", ctx.FieldPath(), ctx.Value, max))
-		}
+		return nil
 	})
-	return a
 }
 
 func (a *ArraySchema) Length(length int) *ArraySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
-		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
-			return
+	return a.Check(func(ctxValue interface{}) error {
+		if reflect.ValueOf(ctxValue).Len() != length {
+			return fmt.Errorf("length not equal to %d", length)
 		}
-		if reflect.ValueOf(ctx.Value).Len() != length {
-			ctx.Abort(fmt.Errorf("field `%s` value %s length not equal to %d", ctx.FieldPath(), ctx.Value, length))
-		}
+		return nil
 	})
-	return a
-}
-
-func (a *ArraySchema) Transform(f func(*Context)) *ArraySchema {
-	a.rules = append(a.rules, f)
-	return a
 }
 
 func (a *ArraySchema) Validate(ctx *Context) {

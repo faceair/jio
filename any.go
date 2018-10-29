@@ -4,14 +4,6 @@ import (
 	"fmt"
 )
 
-type Schema interface {
-	Validate(*Context)
-}
-
-func boolPtr(value bool) *bool {
-	return &value
-}
-
 var _ Schema = new(AnySchema)
 
 func Any() *AnySchema {
@@ -21,42 +13,55 @@ func Any() *AnySchema {
 }
 
 type AnySchema struct {
+	baseSchema
+
 	required *bool
 	rules    []func(*Context)
 }
 
+func (a *AnySchema) PrependTransform(f func(*Context)) *AnySchema {
+	a.rules = append([]func(*Context){f}, a.rules...)
+	return a
+}
+
+func (a *AnySchema) Transform(f func(*Context)) *AnySchema {
+	a.rules = append(a.rules, f)
+	return a
+}
+
 func (a *AnySchema) Required() *AnySchema {
 	a.required = boolPtr(true)
-	a.rules = append([]func(*Context){func(ctx *Context) {
+	return a.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Abort(fmt.Errorf("field `%s` is required", ctx.FieldPath()))
 		}
-	}}, a.rules...)
-	return a
+	})
 }
 
 func (a *AnySchema) Optional() *AnySchema {
 	a.required = boolPtr(false)
-	a.rules = append([]func(*Context){func(ctx *Context) {
+	return a.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Skip()
 		}
-	}}, a.rules...)
-	return a
+	})
 }
 
 func (a *AnySchema) Default(value interface{}) *AnySchema {
 	a.required = boolPtr(false)
-	a.rules = append([]func(*Context){func(ctx *Context) {
+	return a.PrependTransform(func(ctx *Context) {
 		if ctx.Value == nil {
 			ctx.Value = value
 		}
-	}}, a.rules...)
-	return a
+	})
+}
+
+func (a *AnySchema) When(refPath string, condition interface{}, then Schema) *AnySchema {
+	return a.Transform(func(ctx *Context) { a.when(ctx, refPath, condition, then) })
 }
 
 func (a *AnySchema) Valid(values ...interface{}) *AnySchema {
-	a.rules = append(a.rules, func(ctx *Context) {
+	return a.Transform(func(ctx *Context) {
 		var isValid bool
 		for _, v := range values {
 			if v == ctx.Value {
@@ -69,12 +74,6 @@ func (a *AnySchema) Valid(values ...interface{}) *AnySchema {
 			return
 		}
 	})
-	return a
-}
-
-func (a *AnySchema) Transform(f func(*Context)) *AnySchema {
-	a.rules = append(a.rules, f)
-	return a
 }
 
 func (a *AnySchema) Validate(ctx *Context) {
