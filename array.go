@@ -79,25 +79,18 @@ func (a *ArraySchema) Check(f func(interface{}) error) *ArraySchema {
 	})
 }
 
-func (a *ArraySchema) Valid(values ...interface{}) *ArraySchema {
+func (a *ArraySchema) Items(schemas ...Schema) *ArraySchema {
 	return a.Check(func(ctxValue interface{}) error {
 		ctxRV := reflect.ValueOf(ctxValue)
 		for i := 0; i < ctxRV.Len(); i++ {
 			rv := ctxRV.Index(i).Interface()
 			var isValid bool
-			for _, v := range values {
-				if schema, ok := v.(Schema); ok {
-					ctxNew := NewContext(rv)
-					schema.Validate(ctxNew)
-					if ctxNew.err == nil {
-						isValid = true
-						break
-					}
-				} else {
-					if v == rv {
-						isValid = true
-						break
-					}
+			for _, schema := range schemas {
+				ctxNew := NewContext(rv)
+				schema.Validate(ctxNew)
+				if ctxNew.err == nil {
+					isValid = true
+					break
 				}
 			}
 			if !isValid {

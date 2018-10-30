@@ -15,7 +15,6 @@ func Any() *AnySchema {
 type AnySchema struct {
 	baseSchema
 
-	priority int
 	required *bool
 	rules    []func(*Context)
 }

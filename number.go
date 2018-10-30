@@ -71,7 +71,7 @@ func (n *NumberSchema) Check(f func(float64) error) *NumberSchema {
 	return n.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(float64)
 		if !ok {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
 			return
 		}
 		if err := f(ctxValue); err != nil {
@@ -127,7 +127,7 @@ func (n *NumberSchema) Convert(f func(float64) float64) *NumberSchema {
 	return n.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(float64)
 		if !ok {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
 			return
 		}
 		ctx.Value = f(ctxValue)
@@ -151,6 +151,9 @@ func (n *NumberSchema) Round() *NumberSchema {
 func (n *NumberSchema) Validate(ctx *Context) {
 	if n.required == nil {
 		n.Optional()
+	}
+	if ctxValue, ok := ctx.Value.(int); ok {
+		ctx.Value = float64(ctxValue)
 	}
 	for _, rule := range n.rules {
 		rule(ctx)
