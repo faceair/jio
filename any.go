@@ -15,8 +15,14 @@ func Any() *AnySchema {
 type AnySchema struct {
 	baseSchema
 
+	priority int
 	required *bool
 	rules    []func(*Context)
+}
+
+func (a *AnySchema) SetPriority(priority int) *AnySchema {
+	a.priority = priority
+	return a
 }
 
 func (a *AnySchema) PrependTransform(f func(*Context)) *AnySchema {

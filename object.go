@@ -2,9 +2,26 @@ package jio
 
 import (
 	"fmt"
+	"sort"
 )
 
+type objectItem struct {
+	key    string
+	schema Schema
+}
+
 type K map[string]Schema
+
+func (k K) sort() []objectItem {
+	objects := make([]objectItem, 0, len(k))
+	for key, schema := range k {
+		objects = append(objects, objectItem{key, schema})
+	}
+	sort.Slice(objects, func(i, j int) bool {
+		return objects[i].schema.Priority() > objects[j].schema.Priority()
+	})
+	return objects
+}
 
 func Object() *ObjectSchema {
 	return &ObjectSchema{
@@ -19,6 +36,11 @@ type ObjectSchema struct {
 
 	required *bool
 	rules    []func(*Context)
+}
+
+func (o *ObjectSchema) SetPriority(priority int) *ObjectSchema {
+	o.priority = priority
+	return o
 }
 
 func (o *ObjectSchema) PrependTransform(f func(*Context)) *ObjectSchema {
@@ -69,22 +91,19 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		jsonNew := make(map[string]interface{})
-		for key, schema := range children {
-			value, _ := ctxValue[key]
-			ctxNew := &Context{
-				Root:   ctx.Root,
-				Fields: append(ctx.Fields, key),
-				Value:  value,
-			}
-			schema.Validate(ctxNew)
-			if ctxNew.err != nil {
-				ctx.Abort(ctxNew.err)
+		fields := make([]string, len(ctx.Fields))
+		copy(fields, ctx.Fields)
+
+		for _, obj := range children.sort() {
+			value, _ := ctxValue[obj.key]
+			ctx.Enter(append(fields, obj.key), value)
+			obj.schema.Validate(ctx)
+			if ctx.skip {
 				return
 			}
-			jsonNew[key] = ctxNew.Value
+			ctxValue[obj.key] = ctx.Value
 		}
-		ctx.Value = jsonNew
+		ctx.Value = ctxValue
 	})
 }
 

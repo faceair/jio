@@ -21,6 +21,11 @@ type ArraySchema struct {
 	rules    []func(*Context)
 }
 
+func (a *ArraySchema) SetPriority(priority int) *ArraySchema {
+	a.priority = priority
+	return a
+}
+
 func (a *ArraySchema) PrependTransform(f func(*Context)) *ArraySchema {
 	a.rules = append([]func(*Context){f}, a.rules...)
 	return a

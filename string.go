@@ -21,6 +21,11 @@ type StringSchema struct {
 	rules    []func(*Context)
 }
 
+func (s *StringSchema) SetPriority(priority int) *StringSchema {
+	s.priority = priority
+	return s
+}
+
 func (s *StringSchema) PrependTransform(f func(*Context)) *StringSchema {
 	s.rules = append([]func(*Context){f}, s.rules...)
 	return s

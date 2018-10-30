@@ -17,6 +17,11 @@ type BoolSchema struct {
 	rules    []func(*Context)
 }
 
+func (b *BoolSchema) SetPriority(priority int) *BoolSchema {
+	b.priority = priority
+	return b
+}
+
 func (b *BoolSchema) PrependTransform(f func(*Context)) *BoolSchema {
 	b.rules = append([]func(*Context){f}, b.rules...)
 	return b

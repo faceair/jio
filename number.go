@@ -21,6 +21,11 @@ type NumberSchema struct {
 	rules    []func(*Context)
 }
 
+func (n *NumberSchema) SetPriority(priority int) *NumberSchema {
+	n.priority = priority
+	return n
+}
+
 func (n *NumberSchema) PrependTransform(f func(*Context)) *NumberSchema {
 	n.rules = append([]func(*Context){f}, n.rules...)
 	return n
