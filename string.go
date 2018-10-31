@@ -156,6 +156,10 @@ func (s *StringSchema) Token() *StringSchema {
 	return s.Regex(`^\w+$`)
 }
 
+func (s *StringSchema) Email() *StringSchema {
+	return s.Regex("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+}
+
 func (s *StringSchema) Convert(f func(string) string) *StringSchema {
 	return s.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(string)
@@ -189,7 +193,7 @@ func (s *StringSchema) Validate(ctx *Context) {
 			return
 		}
 	}
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		if _, ok := (ctx.Value).(string); !ok {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not string", ctx.FieldPath(), ctx.Value))
 		}

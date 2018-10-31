@@ -25,7 +25,7 @@ func (b *baseSchema) when(ctx *Context, refPath string, condition interface{}, t
 	if conditionSchema, ok := condition.(Schema); ok {
 		newCtx := NewContext(value)
 		conditionSchema.Validate(newCtx)
-		if newCtx.err == nil {
+		if newCtx.Err == nil {
 			then.Validate(ctx)
 		}
 		return

@@ -88,7 +88,7 @@ func (a *ArraySchema) Items(schemas ...Schema) *ArraySchema {
 			for _, schema := range schemas {
 				ctxNew := NewContext(rv)
 				schema.Validate(ctxNew)
-				if ctxNew.err == nil {
+				if ctxNew.Err == nil {
 					isValid = true
 					break
 				}
@@ -138,7 +138,7 @@ func (a *ArraySchema) Validate(ctx *Context) {
 			return
 		}
 	}
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		if !ctx.AssertKind(reflect.Slice) {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 		}

@@ -30,7 +30,7 @@ func TestBoolSchema_TransformAndPrependTransform(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		ctx := NewContext(nil)
 		schema.rules[i](ctx)
-		if ctx.err.Error() != strconv.Itoa(i) {
+		if ctx.Err.Error() != strconv.Itoa(i) {
 			t.Error("sequential error")
 		}
 	}
@@ -40,7 +40,7 @@ func TestBoolSchema_Required(t *testing.T) {
 	schema := Bool().Required()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should error when no data")
 	}
 }
@@ -49,7 +49,7 @@ func TestBoolSchema_Optional(t *testing.T) {
 	schema := Bool().Optional()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("should no error")
 	}
 }
@@ -77,13 +77,13 @@ func TestBoolSchema_Equal(t *testing.T) {
 
 	ctx := NewContext(true)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("equal value test failed")
 	}
 
 	ctx = NewContext("???")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("equal value test failed")
 	}
 }
@@ -98,19 +98,19 @@ func TestBoolSchema_When(t *testing.T) {
 
 	ctx := NewContext(map[string]interface{}{"bool1": true, "bool2": true})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Errorf("bool test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"bool1": false, "bool2": true})
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("bool test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"bool1": false, "bool2": false})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("bool test failed")
 	}
 }
@@ -137,7 +137,7 @@ func TestBoolSchema_Validate(t *testing.T) {
 	schema := Bool()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("default optional should no error")
 	}
 }

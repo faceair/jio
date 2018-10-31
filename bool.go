@@ -110,7 +110,7 @@ func (b *BoolSchema) Validate(ctx *Context) {
 			return
 		}
 	}
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		if _, ok := (ctx.Value).(bool); !ok {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not boolean", ctx.FieldPath(), ctx.Value))
 		}

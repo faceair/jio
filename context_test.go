@@ -64,7 +64,7 @@ func TestContext_FieldPath(t *testing.T) {
 func TestContext_Abort(t *testing.T) {
 	ctx := NewContext(nil)
 	ctx.Abort(errors.New("error"))
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should have error")
 	}
 	if !ctx.skip {
@@ -75,7 +75,7 @@ func TestContext_Abort(t *testing.T) {
 func TestContext_Skip(t *testing.T) {
 	ctx := NewContext(nil)
 	ctx.Skip()
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("should no error")
 	}
 	if !ctx.skip {

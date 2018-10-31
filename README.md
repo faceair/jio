@@ -1,5 +1,9 @@
 <h1 align="center">jio</h1>
-<p align="center"><img src="jio.jpg" width="240" height="240" border="0" alt="jio"></p>
+
+<p align="center">
+    <img src="jio.jpg" width="240" height="240" border="0" alt="jio">
+</p>
+<p align="center">Make validation simple!</p>
 
 <p align="center">
     <a href="https://raw.githubusercontent.com/faceair/jio/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
@@ -9,5 +13,6 @@
     <a href="https://godoc.org/github.com/faceair/jio"><img src="https://godoc.org/github.com/faceair/jio?status.svg" alt="GoDoc"></a>
 </p>
 
+[中文文档](README.zh.md)
 
-jio is a json schema validator similar to [joi](https://github.com/hapijs/joi) in golang.
+jio is a json schema validator similar to [joi](https://github.com/hapijs/joi).

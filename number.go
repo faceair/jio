@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 )
 
 func Number() *NumberSchema {
@@ -163,6 +164,19 @@ func (n *NumberSchema) Round() *NumberSchema {
 	})
 }
 
+func (n *NumberSchema) ParseString() *NumberSchema {
+	return n.Transform(func(ctx *Context) {
+		if ctxValue, ok := ctx.Value.(string); ok {
+			value, err := strconv.ParseFloat(ctxValue, 64)
+			if err != nil {
+				ctx.Abort(fmt.Errorf("field `%s` value %v corvert to float64 failed", ctx.FieldPath(), ctx.Value))
+				return
+			}
+			ctx.Value = value
+		}
+	})
+}
+
 func (n *NumberSchema) Validate(ctx *Context) {
 	if n.required == nil {
 		n.Optional()
@@ -176,7 +190,7 @@ func (n *NumberSchema) Validate(ctx *Context) {
 			return
 		}
 	}
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		if _, ok := (ctx.Value).(float64); !ok {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not number", ctx.FieldPath(), ctx.Value))
 		}

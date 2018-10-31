@@ -3,6 +3,7 @@ package jio
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type objectItem struct {
@@ -80,6 +81,44 @@ func (o *ObjectSchema) Default(value map[string]interface{}) *ObjectSchema {
 	})
 }
 
+func (o *ObjectSchema) With(values ...string) *ObjectSchema {
+	return o.Transform(func(ctx *Context) {
+		ctxValue, ok := ctx.Value.(map[string]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		for _, value := range values {
+			_, ok := ctxValue[value]
+			if !ok {
+				ctx.Abort(fmt.Errorf("field `%s` not contains %v", ctx.FieldPath(), value))
+				return
+			}
+		}
+	})
+}
+
+func (o *ObjectSchema) Without(values ...string) *ObjectSchema {
+	return o.Transform(func(ctx *Context) {
+		ctxValue, ok := ctx.Value.(map[string]interface{})
+		if !ok {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
+			return
+		}
+		contains := make([]string, 0, 3)
+		for _, value := range values {
+			_, ok := ctxValue[value]
+			if ok {
+				contains = append(contains, value)
+			}
+		}
+		if len(contains) > 1 {
+			ctx.Abort(fmt.Errorf("field `%s` contains %v", ctx.FieldPath(), strings.Join(contains, ",")))
+			return
+		}
+	})
+}
+
 func (o *ObjectSchema) When(refPath string, condition interface{}, then Schema) *ObjectSchema {
 	return o.Transform(func(ctx *Context) { o.when(ctx, refPath, condition, then) })
 }
@@ -91,10 +130,13 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		defer func() { ctx.Value = ctxValue }()
-
 		fields := make([]string, len(ctx.fields))
 		copy(fields, ctx.fields)
+
+		defer func() {
+			ctx.fields = fields
+			ctx.Value = ctxValue
+		}()
 
 		for _, obj := range children.sort() {
 			value, _ := ctxValue[obj.key]
@@ -102,7 +144,7 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 			ctx.fields = append(fields, obj.key)
 			ctx.Value = value
 			obj.schema.Validate(ctx)
-			if ctx.err != nil {
+			if ctx.Err != nil {
 				return
 			}
 			ctxValue[obj.key] = ctx.Value
@@ -120,7 +162,7 @@ func (o *ObjectSchema) Validate(ctx *Context) {
 			return
 		}
 	}
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		if _, ok := (ctx.Value).(map[string]interface{}); !ok {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
 		}

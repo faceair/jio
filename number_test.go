@@ -30,7 +30,7 @@ func TestNumberSchema_TransformAndPrependTransform(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		ctx := NewContext(nil)
 		schema.rules[i](ctx)
-		if ctx.err.Error() != strconv.Itoa(i) {
+		if ctx.Err.Error() != strconv.Itoa(i) {
 			t.Error("sequential error")
 		}
 	}
@@ -40,7 +40,7 @@ func TestNumberSchema_Required(t *testing.T) {
 	schema := Number().Required()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should error when no data")
 	}
 }
@@ -49,7 +49,7 @@ func TestNumberSchema_Optional(t *testing.T) {
 	schema := Number().Optional()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("should no error")
 	}
 }
@@ -78,13 +78,13 @@ func TestNumberSchema_Equal(t *testing.T) {
 	schema := Number().Equal(3)
 	ctx := NewContext(3)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("test equal failed")
 	}
 
 	ctx = NewContext(5)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("test equal failed")
 	}
 }
@@ -101,19 +101,19 @@ func TestNumberSchema_When(t *testing.T) {
 
 	ctx := NewContext(map[string]interface{}{"name": "teenagers", "age": 12})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("teenagers test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"name": "adult", "age": 2})
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("adult test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"name": "badcase", "age": -3})
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("badcase test failed")
 	}
 }
@@ -127,19 +127,19 @@ func TestNumberSchema_Check(t *testing.T) {
 	})
 	ctx := NewContext(1.0)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("should no error")
 	}
 
 	ctx = NewContext(2.0)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should error")
 	}
 
 	ctx = NewContext("???")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should error")
 	}
 }
@@ -149,13 +149,13 @@ func TestNumberSchema_Valid(t *testing.T) {
 
 	ctx := NewContext(1)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("valid value test failed")
 	}
 
 	ctx = NewContext(2)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("invalid value test failed")
 	}
 }
@@ -164,13 +164,13 @@ func TestNumberSchema_Min(t *testing.T) {
 	schema := Number().Min(3)
 	ctx := NewContext(2)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("test min failed")
 	}
 
 	ctx = NewContext(5)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("test min failed")
 	}
 }
@@ -179,13 +179,13 @@ func TestNumberSchema_Max(t *testing.T) {
 	schema := Number().Max(3)
 	ctx := NewContext(2)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("test max failed")
 	}
 
 	ctx = NewContext(5)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("test max failed")
 	}
 }
@@ -194,13 +194,13 @@ func TestNumberSchema_Integer(t *testing.T) {
 	schema := Number().Integer()
 	ctx := NewContext(3.1)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("test integer failed")
 	}
 
 	ctx = NewContext(5)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("test integer failed")
 	}
 }
@@ -217,7 +217,7 @@ func TestNumberSchema_Convert(t *testing.T) {
 
 	ctx = NewContext("??")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("test convert failed")
 	}
 }
@@ -268,13 +268,27 @@ func TestNumberSchema_Validate(t *testing.T) {
 	schema := Number()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("default optional should no error")
 	}
 
 	ctx = NewContext("hhh")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("not number")
+	}
+}
+
+func TestNumberSchema_ParseString(t *testing.T) {
+	schema := Number().ParseString()
+	ctx := NewContext("1.1")
+	schema.Validate(ctx)
+	if ctx.Value != 1.1 {
+		t.Error("test parse string failed")
+	}
+	ctx = NewContext("hi1.1")
+	schema.Validate(ctx)
+	if ctx.Err == nil {
+		t.Error("test parse string failed")
 	}
 }

@@ -30,7 +30,7 @@ func TestAnySchema_TransformAndPrependTransform(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		ctx := NewContext(nil)
 		schema.rules[i](ctx)
-		if ctx.err.Error() != strconv.Itoa(i) {
+		if ctx.Err.Error() != strconv.Itoa(i) {
 			t.Error("sequential error")
 		}
 	}
@@ -40,7 +40,7 @@ func TestAnySchema_Required(t *testing.T) {
 	schema := Any().Required()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should error when no data")
 	}
 }
@@ -49,7 +49,7 @@ func TestAnySchema_Optional(t *testing.T) {
 	schema := Any().Optional()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("should no error")
 	}
 }
@@ -79,13 +79,13 @@ func TestAnySchema_Equal(t *testing.T) {
 
 	ctx := NewContext("hi")
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("equal value test failed")
 	}
 
 	ctx = NewContext("???")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("equal value test failed")
 	}
 }
@@ -102,19 +102,19 @@ func TestAnySchema_When(t *testing.T) {
 
 	ctx := NewContext(map[string]interface{}{"name": "teenagers", "age": 12})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("teenagers test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"name": "adult", "age": 2})
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("adult test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"name": "badcase", "age": -3})
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("badcase test failed")
 	}
 }
@@ -124,13 +124,13 @@ func TestAnySchema_Valid(t *testing.T) {
 
 	ctx := NewContext("hi")
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("valid value test failed")
 	}
 
 	ctx = NewContext("???")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("invalid value test failed")
 	}
 }
@@ -139,7 +139,7 @@ func TestAnySchema_Validate(t *testing.T) {
 	schema := Any()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("default optional should no error")
 	}
 }

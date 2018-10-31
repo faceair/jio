@@ -45,7 +45,7 @@ func TestObjectSchema_TransformAndPrependTransform(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		ctx := NewContext(nil)
 		schema.rules[i](ctx)
-		if ctx.err.Error() != strconv.Itoa(i) {
+		if ctx.Err.Error() != strconv.Itoa(i) {
 			t.Error("sequential error")
 		}
 	}
@@ -55,7 +55,7 @@ func TestObjectSchema_Required(t *testing.T) {
 	schema := Object().Required()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("should error when no data")
 	}
 }
@@ -64,7 +64,7 @@ func TestObjectSchema_Optional(t *testing.T) {
 	schema := Object().Optional()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("should no error")
 	}
 }
@@ -79,6 +79,50 @@ func TestObjectSchema_Default(t *testing.T) {
 	}
 }
 
+func TestObjectSchema_With(t *testing.T) {
+	schema := Object().With("hi", "faceair")
+
+	ctx := NewContext(map[string]interface{}{"hi": "11", "faceair": "111"})
+	schema.Validate(ctx)
+	if ctx.Err != nil {
+		t.Error("valid value test failed")
+	}
+
+	ctx = NewContext(map[string]interface{}{"hi": "11", "othor": "111"})
+	schema.Validate(ctx)
+	if ctx.Err == nil {
+		t.Error("invalid value test failed")
+	}
+
+	ctx = NewContext("hhh")
+	schema.Validate(ctx)
+	if ctx.Err == nil {
+		t.Error("not map")
+	}
+}
+
+func TestObjectSchema_Without(t *testing.T) {
+	schema := Object().Without("hi", "faceair")
+
+	ctx := NewContext(map[string]interface{}{"hi": "11", "faceair": "111"})
+	schema.Validate(ctx)
+	if ctx.Err == nil {
+		t.Error("valid value test failed")
+	}
+
+	ctx = NewContext(map[string]interface{}{"hi": "11", "othor": "111"})
+	schema.Validate(ctx)
+	if ctx.Err != nil {
+		t.Error("invalid value test failed")
+	}
+
+	ctx = NewContext("hhh")
+	schema.Validate(ctx)
+	if ctx.Err == nil {
+		t.Error("not map")
+	}
+}
+
 func TestObjectSchema_When(t *testing.T) {
 	schema := Object().Keys(K{
 		"exist": Bool().Required(),
@@ -89,19 +133,19 @@ func TestObjectSchema_When(t *testing.T) {
 
 	ctx := NewContext(map[string]interface{}{"exist": true, "object": map[string]interface{}{"1": "2"}})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("exist test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"exist": false, "object": nil})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("not exist test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"exist": "badcase", "age": -3})
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("badcase test failed")
 	}
 }
@@ -113,13 +157,13 @@ func TestObjectSchema_Keys(t *testing.T) {
 
 	ctx := NewContext(map[string]interface{}{"exist": true})
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("exist test failed")
 	}
 
 	ctx = NewContext("???")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("unknown input should failed")
 	}
 }
@@ -128,13 +172,13 @@ func TestObjectSchema_Validate(t *testing.T) {
 	schema := Object()
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
-	if ctx.err != nil {
+	if ctx.Err != nil {
 		t.Error("default optional should no error")
 	}
 
 	ctx = NewContext("hhh")
 	schema.Validate(ctx)
-	if ctx.err == nil {
+	if ctx.Err == nil {
 		t.Error("not map")
 	}
 }

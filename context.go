@@ -17,10 +17,10 @@ func NewContext(data interface{}) *Context {
 
 type Context struct {
 	Value     interface{}
+	Err       error
 	root      interface{}
 	fields    []string
 	storage   map[string]interface{}
-	err       error
 	skip      bool
 	kindCache map[*interface{}]reflect.Kind
 }
@@ -47,7 +47,7 @@ func (ctx *Context) FieldPath() string {
 }
 
 func (ctx *Context) Abort(err error) {
-	ctx.err = err
+	ctx.Err = err
 	ctx.skip = true
 }
 
