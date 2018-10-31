@@ -7,10 +7,11 @@ import (
 
 func NewContext(data interface{}) *Context {
 	return &Context{
-		root:    data,
-		Value:   data,
-		fields:  make([]string, 0, 3),
-		storage: make(map[string]interface{}),
+		root:      data,
+		Value:     data,
+		fields:    make([]string, 0, 3),
+		storage:   make(map[string]interface{}),
+		kindCache: make(map[*interface{}]reflect.Kind),
 	}
 }
 
@@ -27,8 +28,13 @@ type Context struct {
 func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) {
 	fields := strings.Split(refPath, ".")
 	value = ctx.root
+	var valueMap map[string]interface{}
 	for _, field := range fields {
-		value, ok = value.(map[string]interface{})[field]
+		valueMap, ok = value.(map[string]interface{})
+		if !ok {
+			return
+		}
+		value, ok = valueMap[field]
 		if !ok {
 			return
 		}

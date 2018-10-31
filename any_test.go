@@ -70,7 +70,8 @@ func TestAnySchema_When(t *testing.T) {
 		"age": Any().
 			When("name", "youth", Number().Min(12)).
 			When("name", "adult", Number().Min(18)).
-			When("name", String(), Number().Min(0)),
+			When("name", String(), Number().Min(0)).
+			When("???", String(), Number().Min(-10)),
 	})
 
 	ctx := NewContext(map[string]interface{}{"name": "teenagers", "age": 12})
