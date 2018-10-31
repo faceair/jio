@@ -63,6 +63,21 @@ func (n *NumberSchema) Default(value float64) *NumberSchema {
 	})
 }
 
+func (n *NumberSchema) Set(value float64) *NumberSchema {
+	return n.Transform(func(ctx *Context) {
+		ctx.Value = value
+	})
+}
+
+func (n *NumberSchema) Equal(value float64) *NumberSchema {
+	return n.Check(func(ctxValue float64) error {
+		if value != ctxValue {
+			return fmt.Errorf("is not %v", value)
+		}
+		return nil
+	})
+}
+
 func (n *NumberSchema) When(refPath string, condition interface{}, then Schema) *NumberSchema {
 	return n.Transform(func(ctx *Context) { n.when(ctx, refPath, condition, then) })
 }

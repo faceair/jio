@@ -63,6 +63,31 @@ func TestBoolSchema_Default(t *testing.T) {
 	}
 }
 
+func TestBoolSchema_Set(t *testing.T) {
+	schema := Bool().Set(true)
+	ctx := NewContext(false)
+	schema.Validate(ctx)
+	if ctx.Value != true {
+		t.Error("should set default value")
+	}
+}
+
+func TestBoolSchema_Equal(t *testing.T) {
+	schema := Bool().Equal(true)
+
+	ctx := NewContext(true)
+	schema.Validate(ctx)
+	if ctx.err != nil {
+		t.Error("equal value test failed")
+	}
+
+	ctx = NewContext("???")
+	schema.Validate(ctx)
+	if ctx.err == nil {
+		t.Error("equal value test failed")
+	}
+}
+
 func TestBoolSchema_When(t *testing.T) {
 	schema := Object().Keys(K{
 		"bool1": Bool().Required(),

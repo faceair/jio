@@ -61,6 +61,21 @@ func (a *AnySchema) Default(value interface{}) *AnySchema {
 	})
 }
 
+func (a *AnySchema) Set(value interface{}) *AnySchema {
+	return a.Transform(func(ctx *Context) {
+		ctx.Value = value
+	})
+}
+
+func (a *AnySchema) Equal(value interface{}) *AnySchema {
+	return a.Transform(func(ctx *Context) {
+		if value != ctx.Value {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not %v", ctx.FieldPath(), ctx.Value, value))
+			return
+		}
+	})
+}
+
 func (a *AnySchema) When(refPath string, condition interface{}, then Schema) *AnySchema {
 	return a.Transform(func(ctx *Context) { a.when(ctx, refPath, condition, then) })
 }
@@ -76,15 +91,6 @@ func (a *AnySchema) Valid(values ...interface{}) *AnySchema {
 		}
 		if !isValid {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not in %v", ctx.FieldPath(), ctx.Value, values))
-			return
-		}
-	})
-}
-
-func (a *AnySchema) Equal(value interface{}) *AnySchema {
-	return a.Transform(func(ctx *Context) {
-		if value != ctx.Value {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not %v", ctx.FieldPath(), ctx.Value, value))
 			return
 		}
 	})

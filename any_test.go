@@ -64,6 +64,32 @@ func TestAnySchema_Default(t *testing.T) {
 	}
 }
 
+func TestAnySchema_Set(t *testing.T) {
+	defaultValue := "default_value"
+	schema := Any().Set(defaultValue)
+	ctx := NewContext("othor_value")
+	schema.Validate(ctx)
+	if ctx.Value != defaultValue {
+		t.Error("should set default value")
+	}
+}
+
+func TestAnySchema_Equal(t *testing.T) {
+	schema := Any().Equal("hi")
+
+	ctx := NewContext("hi")
+	schema.Validate(ctx)
+	if ctx.err != nil {
+		t.Error("equal value test failed")
+	}
+
+	ctx = NewContext("???")
+	schema.Validate(ctx)
+	if ctx.err == nil {
+		t.Error("equal value test failed")
+	}
+}
+
 func TestAnySchema_When(t *testing.T) {
 	schema := Object().Keys(K{
 		"name": Any().Required(),
@@ -106,22 +132,6 @@ func TestAnySchema_Valid(t *testing.T) {
 	schema.Validate(ctx)
 	if ctx.err == nil {
 		t.Error("invalid value test failed")
-	}
-}
-
-func TestAnySchema_Equal(t *testing.T) {
-	schema := Any().Equal("hi")
-
-	ctx := NewContext("hi")
-	schema.Validate(ctx)
-	if ctx.err != nil {
-		t.Error("equal value test failed")
-	}
-
-	ctx = NewContext("???")
-	schema.Validate(ctx)
-	if ctx.err == nil {
-		t.Error("equal value test failed")
 	}
 }
 

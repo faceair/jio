@@ -61,6 +61,21 @@ func (b *BoolSchema) Default(value bool) *BoolSchema {
 	})
 }
 
+func (b *BoolSchema) Set(value bool) *BoolSchema {
+	return b.Transform(func(ctx *Context) {
+		ctx.Value = value
+	})
+}
+
+func (b *BoolSchema) Equal(value bool) *BoolSchema {
+	return b.Transform(func(ctx *Context) {
+		if value != ctx.Value {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not %v", ctx.FieldPath(), ctx.Value, value))
+			return
+		}
+	})
+}
+
 func (b *BoolSchema) When(refPath string, condition interface{}, then Schema) *BoolSchema {
 	return b.Transform(func(ctx *Context) { b.when(ctx, refPath, condition, then) })
 }
@@ -81,15 +96,6 @@ func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
 			if v == ctx.Value {
 				ctx.Value = false
 			}
-		}
-	})
-}
-
-func (b *BoolSchema) Equal(value bool) *BoolSchema {
-	return b.Transform(func(ctx *Context) {
-		if value != ctx.Value {
-			ctx.Abort(fmt.Errorf("field `%s` value %v is not %v", ctx.FieldPath(), ctx.Value, value))
-			return
 		}
 	})
 }

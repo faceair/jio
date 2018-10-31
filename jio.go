@@ -1,6 +1,8 @@
 package jio
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 func ValidateJSON(dataRaw *[]byte, schema Schema) (err error) {
 	jsonRaw := make(map[string]interface{})

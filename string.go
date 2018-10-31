@@ -63,6 +63,21 @@ func (s *StringSchema) Default(value string) *StringSchema {
 	})
 }
 
+func (s *StringSchema) Set(value string) *StringSchema {
+	return s.Transform(func(ctx *Context) {
+		ctx.Value = value
+	})
+}
+
+func (s *StringSchema) Equal(value string) *StringSchema {
+	return s.Check(func(ctxValue string) error {
+		if value != ctxValue {
+			return fmt.Errorf("is not %v", value)
+		}
+		return nil
+	})
+}
+
 func (s *StringSchema) When(refPath string, condition interface{}, then Schema) *StringSchema {
 	return s.Transform(func(ctx *Context) { s.when(ctx, refPath, condition, then) })
 }

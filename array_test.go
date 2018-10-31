@@ -110,6 +110,11 @@ func TestArraySchema_Check(t *testing.T) {
 	if ctx.err == nil {
 		t.Error("check should error")
 	}
+	ctx = NewContext("???")
+	schema.Validate(ctx)
+	if ctx.err == nil {
+		t.Error("check should error")
+	}
 }
 
 func TestArraySchema_Items(t *testing.T) {
@@ -184,5 +189,11 @@ func TestArraySchema_Validate(t *testing.T) {
 	schema.Validate(ctx)
 	if ctx.err != nil {
 		t.Error("default optional should no error")
+	}
+
+	ctx = NewContext("string")
+	schema.Validate(ctx)
+	if ctx.err == nil {
+		t.Error("not array")
 	}
 }

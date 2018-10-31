@@ -1,0 +1,9 @@
+language: go
+go:
+  - master
+
+before_install:
+  - go get github.com/mattn/goveralls
+
+script:
+  - $GOPATH/bin/goveralls -package=./... -ignore=main.go -service=travis-ci
