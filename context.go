@@ -1,30 +1,32 @@
 package jio
 
 import (
+	"reflect"
 	"strings"
 )
 
 func NewContext(data interface{}) *Context {
 	return &Context{
-		Root:    data,
+		root:    data,
 		Value:   data,
-		Fields:  make([]string, 0, 3),
+		fields:  make([]string, 0, 3),
 		storage: make(map[string]interface{}),
 	}
 }
 
 type Context struct {
-	Root    interface{}
-	Fields  []string
-	Value   interface{}
-	storage map[string]interface{}
-	err     error
-	skip    bool
+	Value     interface{}
+	root      interface{}
+	fields    []string
+	storage   map[string]interface{}
+	err       error
+	skip      bool
+	kindCache map[*interface{}]reflect.Kind
 }
 
 func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) {
 	fields := strings.Split(refPath, ".")
-	value = ctx.Root
+	value = ctx.root
 	for _, field := range fields {
 		value, ok = value.(map[string]interface{})[field]
 		if !ok {
@@ -35,12 +37,7 @@ func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) {
 }
 
 func (ctx *Context) FieldPath() string {
-	return strings.Join(ctx.Fields, ".")
-}
-
-func (ctx *Context) Enter(fields []string, value interface{}) {
-	ctx.Fields = fields
-	ctx.Value = value
+	return strings.Join(ctx.fields, ".")
 }
 
 func (ctx *Context) Abort(err error) {
@@ -59,4 +56,13 @@ func (ctx *Context) Set(name string, value interface{}) {
 func (ctx *Context) Get(name string) (interface{}, bool) {
 	value, ok := ctx.storage[name]
 	return value, ok
+}
+
+func (ctx *Context) AssertKind(kind reflect.Kind) bool {
+	cachedKind, ok := ctx.kindCache[&ctx.Value]
+	if !ok {
+		cachedKind = reflect.TypeOf(ctx.Value).Kind()
+		ctx.kindCache[&ctx.Value] = cachedKind
+	}
+	return cachedKind == kind
 }

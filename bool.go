@@ -1,6 +1,8 @@
 package jio
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func Bool() *BoolSchema {
 	return &BoolSchema{
@@ -79,6 +81,15 @@ func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
 			if v == ctx.Value {
 				ctx.Value = false
 			}
+		}
+	})
+}
+
+func (b *BoolSchema) Equal(value bool) *BoolSchema {
+	return b.Transform(func(ctx *Context) {
+		if value != ctx.Value {
+			ctx.Abort(fmt.Errorf("field `%s` value %v is not %v", ctx.FieldPath(), ctx.Value, value))
+			return
 		}
 	})
 }

@@ -69,7 +69,7 @@ func (a *ArraySchema) When(refPath string, condition interface{}, then Schema) *
 
 func (a *ArraySchema) Check(f func(interface{}) error) *ArraySchema {
 	return a.Transform(func(ctx *Context) {
-		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
+		if !ctx.AssertKind(reflect.Slice) {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 			return
 		}
@@ -139,7 +139,7 @@ func (a *ArraySchema) Validate(ctx *Context) {
 		}
 	}
 	if ctx.err == nil {
-		if reflect.TypeOf(ctx.Value).Kind() != reflect.Slice {
+		if !ctx.AssertKind(reflect.Slice) {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not array", ctx.FieldPath(), ctx.Value))
 		}
 	}

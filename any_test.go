@@ -15,7 +15,7 @@ func TestAnySchema_SetPriority(t *testing.T) {
 }
 
 func TestAnySchema_TransformAndPrependTransform(t *testing.T) {
-	any := Any().Transform(func(ctx *Context) {
+	schema := Any().Transform(func(ctx *Context) {
 		ctx.Abort(errors.New("2"))
 	}).Transform(func(ctx *Context) {
 		ctx.Abort(errors.New("3"))
@@ -24,12 +24,12 @@ func TestAnySchema_TransformAndPrependTransform(t *testing.T) {
 	}).PrependTransform(func(ctx *Context) {
 		ctx.Abort(errors.New("0"))
 	})
-	if len(any.rules) != 4 {
+	if len(schema.rules) != 4 {
 		t.Error("miss function")
 	}
 	for i := 0; i < 4; i++ {
 		ctx := NewContext(nil)
-		any.rules[i](ctx)
+		schema.rules[i](ctx)
 		if ctx.err.Error() != strconv.Itoa(i) {
 			t.Error("sequential error")
 		}
@@ -37,18 +37,18 @@ func TestAnySchema_TransformAndPrependTransform(t *testing.T) {
 }
 
 func TestAnySchema_Required(t *testing.T) {
-	any := Any().Required()
+	schema := Any().Required()
 	ctx := NewContext(nil)
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err == nil {
 		t.Error("should error when no data")
 	}
 }
 
 func TestAnySchema_Optional(t *testing.T) {
-	any := Any().Optional()
+	schema := Any().Optional()
 	ctx := NewContext(nil)
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err != nil {
 		t.Error("should no error")
 	}
@@ -56,16 +56,16 @@ func TestAnySchema_Optional(t *testing.T) {
 
 func TestAnySchema_Default(t *testing.T) {
 	defaultValue := "default_value"
-	any := Any().Default(defaultValue)
+	schema := Any().Default(defaultValue)
 	ctx := NewContext(nil)
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.Value != defaultValue {
 		t.Error("should set default value")
 	}
 }
 
 func TestAnySchema_When(t *testing.T) {
-	any := Object().Keys(K{
+	schema := Object().Keys(K{
 		"name": Any().Required(),
 		"age": Any().
 			When("name", "youth", Number().Min(12)).
@@ -74,44 +74,60 @@ func TestAnySchema_When(t *testing.T) {
 	})
 
 	ctx := NewContext(map[string]interface{}{"name": "teenagers", "age": 12})
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err != nil {
 		t.Error("teenagers test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"name": "adult", "age": 2})
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err == nil {
 		t.Error("adult test failed")
 	}
 
 	ctx = NewContext(map[string]interface{}{"name": "badcase", "age": -3})
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err == nil {
 		t.Error("badcase test failed")
 	}
 }
 
 func TestAnySchema_Valid(t *testing.T) {
-	any := Any().Valid("hi")
+	schema := Any().Valid("hi")
 
 	ctx := NewContext("hi")
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err != nil {
 		t.Error("valid value test failed")
 	}
 
 	ctx = NewContext("???")
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err == nil {
 		t.Error("invalid value test failed")
 	}
 }
 
+func TestAnySchema_Equal(t *testing.T) {
+	schema := Any().Equal("hi")
+
+	ctx := NewContext("hi")
+	schema.Validate(ctx)
+	if ctx.err != nil {
+		t.Error("equal value test failed")
+	}
+
+	ctx = NewContext("???")
+	schema.Validate(ctx)
+	if ctx.err == nil {
+		t.Error("equal value test failed")
+	}
+}
+
 func TestAnySchema_Validate(t *testing.T) {
-	any := Any()
+	schema := Any()
 	ctx := NewContext(nil)
-	any.Validate(ctx)
+	schema.Validate(ctx)
 	if ctx.err != nil {
 		t.Error("default optional should no error")
 	}

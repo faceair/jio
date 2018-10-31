@@ -91,12 +91,13 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		fields := make([]string, len(ctx.Fields))
-		copy(fields, ctx.Fields)
+		fields := make([]string, len(ctx.fields))
+		copy(fields, ctx.fields)
 
 		for _, obj := range children.sort() {
 			value, _ := ctxValue[obj.key]
-			ctx.Enter(append(fields, obj.key), value)
+			ctx.fields = append(fields, obj.key)
+			ctx.Value = value
 			obj.schema.Validate(ctx)
 			if ctx.skip {
 				return
