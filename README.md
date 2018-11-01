@@ -14,5 +14,3 @@
 </p>
 
 [中文文档](README.zh.md)
-
-jio is a json schema validator similar to [joi](https://github.com/hapijs/joi).

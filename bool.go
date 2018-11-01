@@ -71,7 +71,6 @@ func (b *BoolSchema) Equal(value bool) *BoolSchema {
 	return b.Transform(func(ctx *Context) {
 		if value != ctx.Value {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not %v", ctx.FieldPath(), ctx.Value, value))
-			return
 		}
 	})
 }
