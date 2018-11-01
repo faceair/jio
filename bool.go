@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// Bool Generates a schema object that matches bool data type
 func Bool() *BoolSchema {
 	return &BoolSchema{
 		rules: make([]func(*Context), 0, 3),
@@ -12,6 +13,7 @@ func Bool() *BoolSchema {
 
 var _ Schema = new(BoolSchema)
 
+// BoolSchema match bool data type
 type BoolSchema struct {
 	baseSchema
 
@@ -19,21 +21,25 @@ type BoolSchema struct {
 	rules    []func(*Context)
 }
 
+// SetPriority same as AnySchema.SetPriority
 func (b *BoolSchema) SetPriority(priority int) *BoolSchema {
 	b.priority = priority
 	return b
 }
 
+// PrependTransform same as AnySchema.PrependTransform
 func (b *BoolSchema) PrependTransform(f func(*Context)) *BoolSchema {
 	b.rules = append([]func(*Context){f}, b.rules...)
 	return b
 }
 
+// Transform same as AnySchema.Transform
 func (b *BoolSchema) Transform(f func(*Context)) *BoolSchema {
 	b.rules = append(b.rules, f)
 	return b
 }
 
+// Required same as AnySchema.Required
 func (b *BoolSchema) Required() *BoolSchema {
 	b.required = boolPtr(true)
 	return b.PrependTransform(func(ctx *Context) {
@@ -43,6 +49,7 @@ func (b *BoolSchema) Required() *BoolSchema {
 	})
 }
 
+// Optional same as AnySchema.Optional
 func (b *BoolSchema) Optional() *BoolSchema {
 	b.required = boolPtr(false)
 	return b.PrependTransform(func(ctx *Context) {
@@ -52,6 +59,7 @@ func (b *BoolSchema) Optional() *BoolSchema {
 	})
 }
 
+// Default same as AnySchema.Default
 func (b *BoolSchema) Default(value bool) *BoolSchema {
 	b.required = boolPtr(false)
 	return b.PrependTransform(func(ctx *Context) {
@@ -61,12 +69,14 @@ func (b *BoolSchema) Default(value bool) *BoolSchema {
 	})
 }
 
+// Set same as AnySchema.Set
 func (b *BoolSchema) Set(value bool) *BoolSchema {
 	return b.Transform(func(ctx *Context) {
 		ctx.Value = value
 	})
 }
 
+// Equal same as AnySchema.Equal
 func (b *BoolSchema) Equal(value bool) *BoolSchema {
 	return b.Transform(func(ctx *Context) {
 		if value != ctx.Value {
@@ -75,6 +85,7 @@ func (b *BoolSchema) Equal(value bool) *BoolSchema {
 	})
 }
 
+// When same as AnySchema.When
 func (b *BoolSchema) When(refPath string, condition interface{}, then Schema) *BoolSchema {
 	return b.Transform(func(ctx *Context) { b.when(ctx, refPath, condition, then) })
 }
@@ -99,6 +110,7 @@ func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
 	})
 }
 
+// Validate same as AnySchema.Validate
 func (b *BoolSchema) Validate(ctx *Context) {
 	if b.required == nil {
 		b.Optional()

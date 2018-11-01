@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// Number Generates a schema object that matches number data type
 func Number() *NumberSchema {
 	return &NumberSchema{
 		rules: make([]func(*Context), 0, 3),
@@ -15,6 +16,7 @@ func Number() *NumberSchema {
 
 var _ Schema = new(NumberSchema)
 
+// NumberSchema match number data type
 type NumberSchema struct {
 	baseSchema
 
@@ -22,21 +24,25 @@ type NumberSchema struct {
 	rules    []func(*Context)
 }
 
+// SetPriority same as AnySchema.SetPriority
 func (n *NumberSchema) SetPriority(priority int) *NumberSchema {
 	n.priority = priority
 	return n
 }
 
+// PrependTransform same as AnySchema.PrependTransform
 func (n *NumberSchema) PrependTransform(f func(*Context)) *NumberSchema {
 	n.rules = append([]func(*Context){f}, n.rules...)
 	return n
 }
 
+// Transform same as AnySchema.Transform
 func (n *NumberSchema) Transform(f func(*Context)) *NumberSchema {
 	n.rules = append(n.rules, f)
 	return n
 }
 
+// Required same as AnySchema.Required
 func (n *NumberSchema) Required() *NumberSchema {
 	n.required = boolPtr(true)
 	return n.PrependTransform(func(ctx *Context) {
@@ -46,6 +52,7 @@ func (n *NumberSchema) Required() *NumberSchema {
 	})
 }
 
+// Optional same as AnySchema.Optional
 func (n *NumberSchema) Optional() *NumberSchema {
 	n.required = boolPtr(false)
 	return n.PrependTransform(func(ctx *Context) {
@@ -55,6 +62,7 @@ func (n *NumberSchema) Optional() *NumberSchema {
 	})
 }
 
+// Default same as AnySchema.Default
 func (n *NumberSchema) Default(value float64) *NumberSchema {
 	n.required = boolPtr(false)
 	return n.PrependTransform(func(ctx *Context) {
@@ -64,12 +72,14 @@ func (n *NumberSchema) Default(value float64) *NumberSchema {
 	})
 }
 
+// Set same as AnySchema.Set
 func (n *NumberSchema) Set(value float64) *NumberSchema {
 	return n.Transform(func(ctx *Context) {
 		ctx.Value = value
 	})
 }
 
+// Equal same as AnySchema.Equal
 func (n *NumberSchema) Equal(value float64) *NumberSchema {
 	return n.Check(func(ctxValue float64) error {
 		if value != ctxValue {
@@ -79,6 +89,7 @@ func (n *NumberSchema) Equal(value float64) *NumberSchema {
 	})
 }
 
+// When same as AnySchema.When
 func (n *NumberSchema) When(refPath string, condition interface{}, then Schema) *NumberSchema {
 	return n.Transform(func(ctx *Context) { n.when(ctx, refPath, condition, then) })
 }
@@ -96,6 +107,7 @@ func (n *NumberSchema) Check(f func(float64) error) *NumberSchema {
 	})
 }
 
+// Valid same as AnySchema.Valid
 func (n *NumberSchema) Valid(values ...float64) *NumberSchema {
 	return n.Check(func(ctxValue float64) error {
 		var isValid bool
@@ -177,6 +189,7 @@ func (n *NumberSchema) ParseString() *NumberSchema {
 	})
 }
 
+// Validate same as AnySchema.Validate
 func (n *NumberSchema) Validate(ctx *Context) {
 	if n.required == nil {
 		n.Optional()

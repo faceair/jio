@@ -29,47 +29,47 @@ jio 提供足够灵活的校验方式，期望能让你的校验变得简单！
 package main
 
 import (
-	"log"
+    "log"
 
-	"github.com/faceair/jio"
+    "github.com/faceair/jio"
 )
 
 func main() {
-	data := []byte(`{
-		"debug": "on",
-		"window": {
-			"title": "Sample Widget",
-			"size": [500, 500]
-		}
-	}`)
-	_, err := jio.ValidateJSON(&data, jio.Object().Keys(jio.K{
-		"debug": jio.Bool().Truthy("on").Required(),
-		"window": jio.Object().Keys(jio.K{
-			"title": jio.String().Min(3).Max(18),
-			"size":  jio.Array().Items(jio.Number().Integer()).Length(2).Required(),
-		}).Without("name", "title").Required(),
-	}))
-	if err != nil {
-		panic(err)
-	}
-	log.Printf("%s", data) // {"debug":true,"window":{"size":[500,500],"title":"Sample Widget"}}
+    data := []byte(`{
+        "debug": "on",
+        "window": {
+            "title": "Sample Widget",
+            "size": [500, 500]
+        }
+    }`)
+    _, err := jio.ValidateJSON(&data, jio.Object().Keys(jio.K{
+        "debug": jio.Bool().Truthy("on").Required(),
+        "window": jio.Object().Keys(jio.K{
+            "title": jio.String().Min(3).Max(18),
+            "size":  jio.Array().Items(jio.Number().Integer()).Length(2).Required(),
+        }).Without("name", "title").Required(),
+    }))
+    if err != nil {
+        panic(err)
+    }
+    log.Printf("%s", data) // {"debug":true,"window":{"size":[500,500],"title":"Sample Widget"}}
 }
 ```
 
 这个例子中定义了这些约束：
 * `debug`
-	* 非空，校验结束的时候必须是布尔值
-	* 允许使用 `on` 字符串代替 `true`
+    * 非空，校验结束的时候必须是布尔值
+    * 允许使用 `on` 字符串代替 `true`
 * `window`
-	* 非空，对象
-	* 不允许 `name` 和 `title` 同时存在
-	* 存在如下元素
-		* `title`
-			* 字符串，可以为空
-			* 当不为空时长度在 3 到 18 之间
-		* `size`
-			* 数组，非空
-			* 存在两个整数类型的子元素
+    * 非空，对象
+    * 不允许 `name` 和 `title` 同时存在
+    * 存在如下元素
+        * `title`
+            * 字符串，可以为空
+            * 当不为空时长度在 3 到 18 之间
+        * `size`
+            * 数组，非空
+            * 存在两个整数类型的子元素
 
 ## 高级用法
 
@@ -98,7 +98,7 @@ jio.String().Min(5).Max(10).Alphanum().Lowercase().Required()
 工作流中的数据传递和流程控制是依靠 Context 结构完成的，略去一些内部方法和字段后的 Context 结构大概是这样的：
 ```go
 type Context struct {
-	Value     interface{}  // 需要校验的原始数据，可以修改
+    Value    interface{}  // 需要校验的原始数据，可以修改
 }
 func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) { // 引用其他字段数据
 }
@@ -113,10 +113,10 @@ func (ctx *Context) Skip() { // 跳过这个 Schema 后续规则的校验
 我们来尝试自定义一个校验规则看看 Context 是怎么使用的，添加规则可以使用 `Transform` 方法：
 ```go
 jio.String().Transform(func(ctx *jio.Context) {
-		if ctx.Value == "faceair" {
-			ctx.Abort(errors.New("oh my god"))
-		}
-	})
+    if ctx.Value == "faceair" {
+        ctx.Abort(errors.New("oh my god"))
+    }
+})
 ```
 我们添加的这个自定义规则的意思是当校验数据等于 `faceair` 的时候抛出 `oh my god`的错误。
 
@@ -134,7 +134,7 @@ ctx.Value = strings.ToLower(ctx.Value)
 ### 引用与优先级
 
 大部分情况下的校验只用关心当前字段的数据，但也有一些时候需要跟其他字段的数据联动，例如
-```json
+```
 {
     "type": "ip",  // 枚举值，ip 或 domain
     "value": "8.8.8.8"
@@ -143,10 +143,10 @@ ctx.Value = strings.ToLower(ctx.Value)
 这个时候 `value` 的校验规则需要根据 `type` 的具体类型来决定，可以写成
 ```go
 jio.Object().Keys(jio.K{
-		"type": jio.String().Valid("ip", "domain").SetPriority(1).Default("ip"),
-		"value": jio.String().
-			When("type", "ip", jio.String().Regex(`^\d+\.\d+\.\d+\.\d+$`)).
-			When("type", "domain", jio.String().Regex(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$`)).Required(),
+        "type": jio.String().Valid("ip", "domain").SetPriority(1).Default("ip"),
+        "value": jio.String().
+            When("type", "ip", jio.String().Regex(`^\d+\.\d+\.\d+\.\d+$`)).
+            When("type", "domain", jio.String().Regex(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$`)).Required(),
 })
 ```
 通过 `When` 函数可以实现引用其他字段数据，如果判断成功就应用新的校验规则给当前的数据。

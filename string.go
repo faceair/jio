@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// String Generates a schema object that matches string data type
 func String() *StringSchema {
 	return &StringSchema{
 		rules: make([]func(*Context), 0, 3),
@@ -14,6 +15,7 @@ func String() *StringSchema {
 
 var _ Schema = new(StringSchema)
 
+// StringSchema match string data type
 type StringSchema struct {
 	baseSchema
 
@@ -21,21 +23,25 @@ type StringSchema struct {
 	rules    []func(*Context)
 }
 
+// SetPriority same as AnySchema.SetPriority
 func (s *StringSchema) SetPriority(priority int) *StringSchema {
 	s.priority = priority
 	return s
 }
 
+// PrependTransform same as AnySchema.PrependTransform
 func (s *StringSchema) PrependTransform(f func(*Context)) *StringSchema {
 	s.rules = append([]func(*Context){f}, s.rules...)
 	return s
 }
 
+// Transform same as AnySchema.Transform
 func (s *StringSchema) Transform(f func(*Context)) *StringSchema {
 	s.rules = append(s.rules, f)
 	return s
 }
 
+// Required same as AnySchema.Required
 func (s *StringSchema) Required() *StringSchema {
 	s.required = boolPtr(true)
 	return s.PrependTransform(func(ctx *Context) {
@@ -45,6 +51,7 @@ func (s *StringSchema) Required() *StringSchema {
 	})
 }
 
+// Optional same as AnySchema.Optional
 func (s *StringSchema) Optional() *StringSchema {
 	s.required = boolPtr(false)
 	return s.PrependTransform(func(ctx *Context) {
@@ -54,6 +61,7 @@ func (s *StringSchema) Optional() *StringSchema {
 	})
 }
 
+// Default same as AnySchema.Default
 func (s *StringSchema) Default(value string) *StringSchema {
 	s.required = boolPtr(false)
 	return s.PrependTransform(func(ctx *Context) {
@@ -63,12 +71,14 @@ func (s *StringSchema) Default(value string) *StringSchema {
 	})
 }
 
+// Set same as AnySchema.Set
 func (s *StringSchema) Set(value string) *StringSchema {
 	return s.Transform(func(ctx *Context) {
 		ctx.Value = value
 	})
 }
 
+// Equal same as AnySchema.Equal
 func (s *StringSchema) Equal(value string) *StringSchema {
 	return s.Check(func(ctxValue string) error {
 		if value != ctxValue {
@@ -78,6 +88,7 @@ func (s *StringSchema) Equal(value string) *StringSchema {
 	})
 }
 
+// When same as AnySchema.When
 func (s *StringSchema) When(refPath string, condition interface{}, then Schema) *StringSchema {
 	return s.Transform(func(ctx *Context) { s.when(ctx, refPath, condition, then) })
 }
@@ -95,6 +106,7 @@ func (s *StringSchema) Check(f func(string) error) *StringSchema {
 	})
 }
 
+// Valid same as AnySchema.Valid
 func (s *StringSchema) Valid(values ...string) *StringSchema {
 	return s.Check(func(ctxValue string) error {
 		var isValid bool
@@ -183,6 +195,7 @@ func (s *StringSchema) Trim() *StringSchema {
 	return s.Convert(strings.TrimSpace)
 }
 
+// Validate same as AnySchema.Validate
 func (s *StringSchema) Validate(ctx *Context) {
 	if s.required == nil {
 		s.Optional()

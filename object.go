@@ -24,6 +24,7 @@ func (k K) sort() []objectItem {
 	return objects
 }
 
+// Object Generates a schema object that matches object data type
 func Object() *ObjectSchema {
 	return &ObjectSchema{
 		rules: make([]func(*Context), 0, 3),
@@ -32,6 +33,7 @@ func Object() *ObjectSchema {
 
 var _ Schema = new(ObjectSchema)
 
+// ObjectSchema match object data type
 type ObjectSchema struct {
 	baseSchema
 
@@ -39,21 +41,25 @@ type ObjectSchema struct {
 	rules    []func(*Context)
 }
 
+// SetPriority same as AnySchema.SetPriority
 func (o *ObjectSchema) SetPriority(priority int) *ObjectSchema {
 	o.priority = priority
 	return o
 }
 
+// PrependTransform same as AnySchema.PrependTransform
 func (o *ObjectSchema) PrependTransform(f func(*Context)) *ObjectSchema {
 	o.rules = append([]func(*Context){f}, o.rules...)
 	return o
 }
 
+// Transform same as AnySchema.Transform
 func (o *ObjectSchema) Transform(f func(*Context)) *ObjectSchema {
 	o.rules = append(o.rules, f)
 	return o
 }
 
+// Required same as AnySchema.Required
 func (o *ObjectSchema) Required() *ObjectSchema {
 	o.required = boolPtr(true)
 	return o.PrependTransform(func(ctx *Context) {
@@ -63,6 +69,7 @@ func (o *ObjectSchema) Required() *ObjectSchema {
 	})
 }
 
+// Optional same as AnySchema.Optional
 func (o *ObjectSchema) Optional() *ObjectSchema {
 	o.required = boolPtr(false)
 	return o.PrependTransform(func(ctx *Context) {
@@ -72,6 +79,7 @@ func (o *ObjectSchema) Optional() *ObjectSchema {
 	})
 }
 
+// Default same as AnySchema.Default
 func (o *ObjectSchema) Default(value map[string]interface{}) *ObjectSchema {
 	o.required = boolPtr(false)
 	return o.PrependTransform(func(ctx *Context) {
@@ -119,6 +127,7 @@ func (o *ObjectSchema) Without(values ...string) *ObjectSchema {
 	})
 }
 
+// When same as AnySchema.When
 func (o *ObjectSchema) When(refPath string, condition interface{}, then Schema) *ObjectSchema {
 	return o.Transform(func(ctx *Context) { o.when(ctx, refPath, condition, then) })
 }
@@ -152,6 +161,7 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 	})
 }
 
+// Validate same as AnySchema.Validate
 func (o *ObjectSchema) Validate(ctx *Context) {
 	if o.required == nil {
 		o.Optional()

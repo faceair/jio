@@ -8,12 +8,14 @@ import (
 
 var _ Schema = new(ArraySchema)
 
+// Array Generates a schema object that matches array data type
 func Array() *ArraySchema {
 	return &ArraySchema{
 		rules: make([]func(*Context), 0, 3),
 	}
 }
 
+// ArraySchema match array data type
 type ArraySchema struct {
 	baseSchema
 
@@ -21,21 +23,25 @@ type ArraySchema struct {
 	rules    []func(*Context)
 }
 
+// SetPriority same as AnySchema.SetPriority
 func (a *ArraySchema) SetPriority(priority int) *ArraySchema {
 	a.priority = priority
 	return a
 }
 
+// PrependTransform same as AnySchema.PrependTransform
 func (a *ArraySchema) PrependTransform(f func(*Context)) *ArraySchema {
 	a.rules = append([]func(*Context){f}, a.rules...)
 	return a
 }
 
+// Transform same as AnySchema.Transform
 func (a *ArraySchema) Transform(f func(*Context)) *ArraySchema {
 	a.rules = append(a.rules, f)
 	return a
 }
 
+// Required same as AnySchema.Required
 func (a *ArraySchema) Required() *ArraySchema {
 	a.required = boolPtr(true)
 	return a.PrependTransform(func(ctx *Context) {
@@ -45,6 +51,7 @@ func (a *ArraySchema) Required() *ArraySchema {
 	})
 }
 
+// Optional same as AnySchema.Optional
 func (a *ArraySchema) Optional() *ArraySchema {
 	a.required = boolPtr(false)
 	return a.PrependTransform(func(ctx *Context) {
@@ -54,6 +61,7 @@ func (a *ArraySchema) Optional() *ArraySchema {
 	})
 }
 
+// Default same as AnySchema.Default
 func (a *ArraySchema) Default(value interface{}) *ArraySchema {
 	a.required = boolPtr(false)
 	return a.PrependTransform(func(ctx *Context) {
@@ -63,6 +71,7 @@ func (a *ArraySchema) Default(value interface{}) *ArraySchema {
 	})
 }
 
+// When same as AnySchema.When
 func (a *ArraySchema) When(refPath string, condition interface{}, then Schema) *ArraySchema {
 	return a.Transform(func(ctx *Context) { a.when(ctx, refPath, condition, then) })
 }
@@ -128,6 +137,7 @@ func (a *ArraySchema) Length(length int) *ArraySchema {
 	})
 }
 
+// Validate same as AnySchema.Validate
 func (a *ArraySchema) Validate(ctx *Context) {
 	if a.required == nil {
 		a.Optional()
