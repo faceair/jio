@@ -94,6 +94,8 @@ func (n *NumberSchema) When(refPath string, condition interface{}, then Schema) 
 	return n.Transform(func(ctx *Context) { n.when(ctx, refPath, condition, then) })
 }
 
+// Check use the provided function to validate the value of the key.
+// Throws an error when the value is not float64.
 func (n *NumberSchema) Check(f func(float64) error) *NumberSchema {
 	return n.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(float64)
@@ -124,6 +126,7 @@ func (n *NumberSchema) Valid(values ...float64) *NumberSchema {
 	})
 }
 
+// Min check if the value is greater than or equal to the provided value.
 func (n *NumberSchema) Min(min float64) *NumberSchema {
 	return n.Check(func(ctxValue float64) error {
 		if ctxValue < min {
@@ -133,6 +136,7 @@ func (n *NumberSchema) Min(min float64) *NumberSchema {
 	})
 }
 
+// Max check if the value is less than or equal to the provided value.
 func (n *NumberSchema) Max(max float64) *NumberSchema {
 	return n.Check(func(ctxValue float64) error {
 		if ctxValue > max {
@@ -142,6 +146,7 @@ func (n *NumberSchema) Max(max float64) *NumberSchema {
 	})
 }
 
+// Integer check if the value is integer.
 func (n *NumberSchema) Integer() *NumberSchema {
 	return n.Check(func(ctxValue float64) error {
 		if ctxValue != math.Trunc(ctxValue) {
@@ -151,6 +156,8 @@ func (n *NumberSchema) Integer() *NumberSchema {
 	})
 }
 
+// Convert use the provided function to convert the value of the key.
+// Throws an error when the value is not float64.
 func (n *NumberSchema) Convert(f func(float64) float64) *NumberSchema {
 	return n.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(float64)
@@ -162,20 +169,24 @@ func (n *NumberSchema) Convert(f func(float64) float64) *NumberSchema {
 	})
 }
 
+// Ceil convert the value to the least integer value greater than or equal to the value.
 func (n *NumberSchema) Ceil() *NumberSchema {
 	return n.Convert(math.Ceil)
 }
 
+// Floor convert the value to the greatest integer value less than or equal to the value.
 func (n *NumberSchema) Floor() *NumberSchema {
 	return n.Convert(math.Floor)
 }
 
+// Round convert the value to the nearest integer, rounding half away from zero.
 func (n *NumberSchema) Round() *NumberSchema {
-	return n.Convert(func(ctxValue float64) float64 {
-		return math.Floor(ctxValue + 0.5)
-	})
+	return n.Convert(math.Round)
 }
 
+// ParseString convert the string value to float64.
+// Validation will be skipped when this value is not string.
+// But if this value is not a valid number, an error will be thrown.
 func (n *NumberSchema) ParseString() *NumberSchema {
 	return n.Transform(func(ctx *Context) {
 		if ctxValue, ok := ctx.Value.(string); ok {

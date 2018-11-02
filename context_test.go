@@ -94,6 +94,12 @@ func TestContext_SetAndGet(t *testing.T) {
 	if ok || name != nil {
 		t.Error("should be nil")
 	}
+
+	ctx = NewContext(nil)
+	name, ok = ctx.Get("name")
+	if ok || name != nil {
+		t.Error("should be nil")
+	}
 }
 
 func toInterface(value interface{}) *interface{} {

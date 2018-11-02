@@ -9,13 +9,16 @@ import (
 	"strings"
 )
 
-type ContextKey int
+type contextKey int
 
 const (
-	ContextKeyQuery ContextKey = iota
+	// ContextKeyQuery save query map to context with this key
+	ContextKeyQuery contextKey = iota
+	// ContextKeyBody save body map to context with this key
 	ContextKeyBody
 )
 
+// ValidateJSON validate the provided json bytes using the schema.
 func ValidateJSON(dataRaw *[]byte, schema Schema) (dataMap map[string]interface{}, err error) {
 	if err = json.Unmarshal(*dataRaw, &dataMap); err != nil {
 		return
@@ -34,6 +37,7 @@ func ValidateJSON(dataRaw *[]byte, schema Schema) (dataMap map[string]interface{
 	return
 }
 
+// DefaultErrorHandler handle and respond the error
 func DefaultErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	code := http.StatusBadRequest
 	body, _ := json.Marshal(map[string]string{
@@ -44,6 +48,8 @@ func DefaultErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	w.Write(body)
 }
 
+// ValidateBody validate the request's body using the schema.
+// If the verification fails, the errorHandler will be used to handle the error.
 func ValidateBody(schema Schema, errorHandler func(http.ResponseWriter, *http.Request, error)) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +74,7 @@ func ValidateBody(schema Schema, errorHandler func(http.ResponseWriter, *http.Re
 	}
 }
 
+// ValidateQuery validate the request's query using the schema.
 func ValidateQuery(schema Schema, errorHandler func(http.ResponseWriter, *http.Request, error)) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {

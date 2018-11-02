@@ -242,21 +242,6 @@ func TestStringSchema_Token(t *testing.T) {
 	}
 }
 
-func TestStringSchema_Email(t *testing.T) {
-	schema := String().Email()
-	ctx := NewContext("hi@gmail.com")
-	schema.Validate(ctx)
-	if ctx.Err != nil {
-		t.Error("test email failed")
-	}
-
-	ctx = NewContext("higmail.com")
-	schema.Validate(ctx)
-	if ctx.Err == nil {
-		t.Error("test email failed")
-	}
-}
-
 func TestStringSchema_Convert(t *testing.T) {
 	schema := String().Convert(func(value string) string {
 		return value + "111"

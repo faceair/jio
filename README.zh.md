@@ -21,7 +21,7 @@
 
 jio 尝试在反序列化之前校验 json 原始数据来避免这些问题，将校验规则定义成 Schema 既容易阅读也很方便地拓展。Schema 内的规则可以按注册顺序校验，同时引入 context 供上下文交换数据，甚至能在单个规则内能感知其他字段数据等等。
 
-jio 提供足够灵活的校验方式，期望能让你的校验变得简单！
+jio 提供足够灵活的校验方式，让你的校验变得简单高效！
 
 ## 基本用法
 
@@ -71,6 +71,10 @@ func main() {
             * 数组，非空
             * 存在两个整数类型的子元素
 
+## API 文档
+
+[https://godoc.org/github.com/faceair/jio](https://godoc.org/github.com/faceair/jio)
+
 ## 高级用法
 
 ### 工作流
@@ -85,6 +89,7 @@ jio.String().Min(5).Max(10).Alphanum().Lowercase()
 * `Required()`
 * `Optional()`
 * `Default(value)`
+
 即包含这三个内置规则的 Schema 将优先校验这三个规则，例如：
 ```go
 jio.String().Min(5).Max(10).Alphanum().Lowercase().Required()
@@ -98,7 +103,7 @@ jio.String().Min(5).Max(10).Alphanum().Lowercase().Required()
 工作流中的数据传递和流程控制是依靠 Context 结构完成的，略去一些内部方法和字段后的 Context 结构大概是这样的：
 ```go
 type Context struct {
-    Value    interface{}  // 需要校验的原始数据，可以修改
+    Value    interface{}  // 需要校验的原始数据，也可以重新赋值改变结果
 }
 func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) { // 引用其他字段数据
 }
@@ -126,7 +131,7 @@ if ctx.Value == nil {
   ctx.Skip()
 }
 ```
-内置的`Lowercase()` 是将原始字符串全部转成小写，核心代码是：
+也可以对 ctx.Value 重新赋值改变输出结果，例如内置的`Lowercase()` 是将原始字符串全部转成小写，核心代码是：
 ```go
 ctx.Value = strings.ToLower(ctx.Value)
 ```

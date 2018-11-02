@@ -76,6 +76,8 @@ func (a *ArraySchema) When(refPath string, condition interface{}, then Schema) *
 	return a.Transform(func(ctx *Context) { a.when(ctx, refPath, condition, then) })
 }
 
+// Check use the provided function to validate the value of the key.
+// Throws an error when the value is not a slice.
 func (a *ArraySchema) Check(f func(interface{}) error) *ArraySchema {
 	return a.Transform(func(ctx *Context) {
 		if !ctx.AssertKind(reflect.Slice) {
@@ -88,6 +90,7 @@ func (a *ArraySchema) Check(f func(interface{}) error) *ArraySchema {
 	})
 }
 
+// Items check if this value can pass the validation of any schema.
 func (a *ArraySchema) Items(schemas ...Schema) *ArraySchema {
 	return a.Check(func(ctxValue interface{}) error {
 		ctxRV := reflect.ValueOf(ctxValue)
@@ -110,6 +113,7 @@ func (a *ArraySchema) Items(schemas ...Schema) *ArraySchema {
 	})
 }
 
+// Min check if the length of this slice is greater than or equal to the provided length.
 func (a *ArraySchema) Min(min int) *ArraySchema {
 	return a.Check(func(ctxValue interface{}) error {
 		if reflect.ValueOf(ctxValue).Len() < min {
@@ -119,6 +123,7 @@ func (a *ArraySchema) Min(min int) *ArraySchema {
 	})
 }
 
+// Max check if the length of this slice is less than or equal to the provided length.
 func (a *ArraySchema) Max(max int) *ArraySchema {
 	return a.Check(func(ctxValue interface{}) error {
 		if reflect.ValueOf(ctxValue).Len() > max {
@@ -128,6 +133,7 @@ func (a *ArraySchema) Max(max int) *ArraySchema {
 	})
 }
 
+// Length check if the length of this slice is equal to the provided length.
 func (a *ArraySchema) Length(length int) *ArraySchema {
 	return a.Check(func(ctxValue interface{}) error {
 		if reflect.ValueOf(ctxValue).Len() != length {

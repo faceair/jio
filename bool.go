@@ -90,6 +90,7 @@ func (b *BoolSchema) When(refPath string, condition interface{}, then Schema) *B
 	return b.Transform(func(ctx *Context) { b.when(ctx, refPath, condition, then) })
 }
 
+// Truthy allow for additional values to be considered valid booleans by converting them to true during validation.
 func (b *BoolSchema) Truthy(values ...interface{}) *BoolSchema {
 	return b.Transform(func(ctx *Context) {
 		for _, v := range values {
@@ -100,6 +101,7 @@ func (b *BoolSchema) Truthy(values ...interface{}) *BoolSchema {
 	})
 }
 
+// Falsy allow for additional values to be considered valid booleans by converting them to false during validation.
 func (b *BoolSchema) Falsy(values ...interface{}) *BoolSchema {
 	return b.Transform(func(ctx *Context) {
 		for _, v := range values {

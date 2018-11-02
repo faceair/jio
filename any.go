@@ -63,7 +63,7 @@ func (a *AnySchema) Optional() *AnySchema {
 	})
 }
 
-// Default set a default value if the original value is undefined or null where.
+// Default set a default value if the original value is undefined or null.
 func (a *AnySchema) Default(value interface{}) *AnySchema {
 	a.required = boolPtr(false)
 	return a.PrependTransform(func(ctx *Context) {
@@ -101,7 +101,7 @@ func (a *AnySchema) When(refPath string, condition interface{}, then Schema) *An
 	return a.Transform(func(ctx *Context) { a.when(ctx, refPath, condition, then) })
 }
 
-// Valid add the provided values into the allowed whitelist and mark them as the only valid values allowed where.
+// Valid add the provided values into the allowed whitelist and mark them as the only valid values allowed.
 func (a *AnySchema) Valid(values ...interface{}) *AnySchema {
 	return a.Transform(func(ctx *Context) {
 		var isValid bool

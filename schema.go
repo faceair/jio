@@ -1,5 +1,6 @@
 package jio
 
+// Schema interface
 type Schema interface {
 	Priority() int
 	Validate(*Context)

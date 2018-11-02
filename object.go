@@ -11,6 +11,7 @@ type objectItem struct {
 	schema Schema
 }
 
+// K object keys schema alias
 type K map[string]Schema
 
 func (k K) sort() []objectItem {
@@ -89,24 +90,26 @@ func (o *ObjectSchema) Default(value map[string]interface{}) *ObjectSchema {
 	})
 }
 
-func (o *ObjectSchema) With(values ...string) *ObjectSchema {
+// With require the presence of these keys.
+func (o *ObjectSchema) With(keys ...string) *ObjectSchema {
 	return o.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(map[string]interface{})
 		if !ok {
 			ctx.Abort(fmt.Errorf("field `%s` value %v is not object", ctx.FieldPath(), ctx.Value))
 			return
 		}
-		for _, value := range values {
-			_, ok := ctxValue[value]
+		for _, key := range keys {
+			_, ok := ctxValue[key]
 			if !ok {
-				ctx.Abort(fmt.Errorf("field `%s` not contains %v", ctx.FieldPath(), value))
+				ctx.Abort(fmt.Errorf("field `%s` not contains %v", ctx.FieldPath(), key))
 				return
 			}
 		}
 	})
 }
 
-func (o *ObjectSchema) Without(values ...string) *ObjectSchema {
+// Without forbids the presence of these keys.
+func (o *ObjectSchema) Without(keys ...string) *ObjectSchema {
 	return o.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(map[string]interface{})
 		if !ok {
@@ -114,10 +117,10 @@ func (o *ObjectSchema) Without(values ...string) *ObjectSchema {
 			return
 		}
 		contains := make([]string, 0, 3)
-		for _, value := range values {
-			_, ok := ctxValue[value]
+		for _, key := range keys {
+			_, ok := ctxValue[key]
 			if ok {
-				contains = append(contains, value)
+				contains = append(contains, key)
 			}
 		}
 		if len(contains) > 1 {
@@ -132,6 +135,7 @@ func (o *ObjectSchema) When(refPath string, condition interface{}, then Schema) 
 	return o.Transform(func(ctx *Context) { o.when(ctx, refPath, condition, then) })
 }
 
+// Keys set the object keys's schema
 func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 	return o.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(map[string]interface{})

@@ -93,6 +93,8 @@ func (s *StringSchema) When(refPath string, condition interface{}, then Schema) 
 	return s.Transform(func(ctx *Context) { s.when(ctx, refPath, condition, then) })
 }
 
+// Check use the provided function to validate the value of the key.
+// Throws an error when the value is not string.
 func (s *StringSchema) Check(f func(string) error) *StringSchema {
 	return s.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(string)
@@ -123,6 +125,7 @@ func (s *StringSchema) Valid(values ...string) *StringSchema {
 	})
 }
 
+// Min check if the length of this string is greater than or equal to the provided length.
 func (s *StringSchema) Min(min int) *StringSchema {
 	return s.Check(func(ctxValue string) error {
 		if len(ctxValue) < min {
@@ -132,6 +135,7 @@ func (s *StringSchema) Min(min int) *StringSchema {
 	})
 }
 
+// Max check if the length of this string is less than or equal to the provided length.
 func (s *StringSchema) Max(max int) *StringSchema {
 	return s.Check(func(ctxValue string) error {
 		if len(ctxValue) > max {
@@ -141,6 +145,7 @@ func (s *StringSchema) Max(max int) *StringSchema {
 	})
 }
 
+// Length check if the length of this string is equal to the provided length.
 func (s *StringSchema) Length(length int) *StringSchema {
 	return s.Check(func(ctxValue string) error {
 		if len(ctxValue) != length {
@@ -150,6 +155,7 @@ func (s *StringSchema) Length(length int) *StringSchema {
 	})
 }
 
+// Regex check if the value is matched the regex.
 func (s *StringSchema) Regex(regex string) *StringSchema {
 	re := regexp.MustCompile(regex)
 	return s.Check(func(ctxValue string) error {
@@ -160,18 +166,18 @@ func (s *StringSchema) Regex(regex string) *StringSchema {
 	})
 }
 
+// Alphanum check if the string value to only contain a-z, A-Z, and 0-9
 func (s *StringSchema) Alphanum() *StringSchema {
 	return s.Regex(`^[a-zA-Z0-9]+$`)
 }
 
+// Token check if the string value to only contain a-z, A-Z, 0-9, and underscore _
 func (s *StringSchema) Token() *StringSchema {
 	return s.Regex(`^\w+$`)
 }
 
-func (s *StringSchema) Email() *StringSchema {
-	return s.Regex("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-}
-
+// Convert use the provided function to convert the value of the key.
+// Throws an error when the value is not string.
 func (s *StringSchema) Convert(f func(string) string) *StringSchema {
 	return s.Transform(func(ctx *Context) {
 		ctxValue, ok := ctx.Value.(string)
@@ -183,14 +189,18 @@ func (s *StringSchema) Convert(f func(string) string) *StringSchema {
 	})
 }
 
+// Lowercase convert the string value to lowercase.
 func (s *StringSchema) Lowercase() *StringSchema {
 	return s.Convert(strings.ToLower)
 
 }
+
+// Uppercase convert the string value to uppercase.
 func (s *StringSchema) Uppercase() *StringSchema {
 	return s.Convert(strings.ToUpper)
 }
 
+// Trim  emoves whitespace from both sides of the string value.
 func (s *StringSchema) Trim() *StringSchema {
 	return s.Convert(strings.TrimSpace)
 }
