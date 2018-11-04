@@ -3,7 +3,7 @@
 <p align="center">
     <img src="jio.jpg" width="240" height="240" border="0" alt="jio">
 </p>
-<p align="center">让校验变得简单！</p>
+<p align="center">让校验变得简单高效！</p>
 
 <p align="center">
     <a href="https://raw.githubusercontent.com/faceair/jio/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
@@ -17,13 +17,15 @@
 
 ## 为什么使用 jio ？
 
-在 Golang 中参数校验一直都是一个很头疼的问题，在 struct 上定义 tag 很难拓展规则也不够灵活，手动写校验代码会很麻烦也会让业务逻辑难以梳理，而且 struct 字段的初始零值也会对校验产生干扰。
+在 Golang 中参数校验一直都是一个很头疼的问题，在 struct 上定义 tag 不好拓展规则也不够灵活，手写校验代码会让逻辑代码很啰嗦，而且 struct 字段的初始零值也会对校验产生干扰。
 
-jio 尝试在反序列化之前校验 json 原始数据来避免这些问题，将校验规则定义成 Schema 既容易阅读也很方便地拓展。Schema 内的规则可以按注册顺序校验，同时引入 context 供上下文交换数据，甚至能在单个规则内能感知其他字段数据等等。
+jio 尝试在反序列化之前校验 json 原始数据来避免这些问题，将校验规则定义成 Schema 既容易阅读也很方便地拓展 （灵感来自 Hapi.js joi 库）。Schema 内的规则可以按注册顺序校验，同时可以使用 context 在规则间交换数据，甚至能在单个规则内能访问其他字段数据等等。
 
-jio 提供足够灵活的校验方式，让你的校验变得简单高效！
+jio 提供足够灵活的方式让你的校验变得简单高效！
 
-## 基本用法
+## 怎么用？
+
+### 校验 json 字符串
 
 ```go
 package main
@@ -71,6 +73,78 @@ func main() {
             * 数组，非空
             * 存在两个整数类型的子元素
 
+### 使用 middleware 校验请求 body
+
+以 [chi](https://github.com/go-chi/chi) 为例，其他的框架也是类似的。
+```go
+package main
+
+import (
+	"io/ioutil"
+	"net/http"
+
+	"github.com/faceair/jio"
+	"github.com/go-chi/chi"
+)
+
+func main() {
+	r := chi.NewRouter()
+	r.Route("/people", func(r chi.Router) {
+		r.With(jio.ValidateBody(jio.Object().Keys(jio.K{
+			"name":  jio.String().Min(3).Max(10).Required(),
+			"age":   jio.Number().Integer().Min(0).Max(100).Required(),
+			"phone": jio.String().Regex(`^1[34578]\d{9}$`).Required(),
+		}), jio.DefaultErrorHandler)).Post("/", func(w http.ResponseWriter, r *http.Request) {
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				panic(err)
+			}
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write(body)
+		})
+	})
+	http.ListenAndServe(":8080", r)
+}
+```
+当校验失败时调用 `jio.ValidateBody` 的第二个函数进行错误处理。
+
+### 使用 middleware 校验 query 参数
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/faceair/jio"
+	"github.com/go-chi/chi"
+)
+
+func main() {
+	r := chi.NewRouter()
+	r.Route("/people", func(r chi.Router) {
+		r.With(jio.ValidateQuery(jio.Object().Keys(jio.K{
+			"keyword":  jio.String(),
+            "is_adult": jio.Bool().Truthy("true", "yes").Falsy("false", "no"),
+            "starts_with": jio.Number().ParseString().Integer(),
+		}), jio.DefaultErrorHandler)).Get("/", func(w http.ResponseWriter, r *http.Request) {
+			query := r.Context().Value(jio.ContextKeyQuery).(map[string]interface{})
+			body, err := json.Marshal(query)
+			if err != nil {
+				panic(err)
+			}
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write(body)
+		})
+	})
+	http.ListenAndServe(":8080", r)
+}
+```
+需要注意的是 query 参数的原始值都是 string，校验时可能需要先转换类型（例如 `jio.Number().ParseString()` 或 `jio.Bool().Truthy(values)`）。
+
 ## API 文档
 
 [https://godoc.org/github.com/faceair/jio](https://godoc.org/github.com/faceair/jio)
@@ -80,72 +154,86 @@ func main() {
 ### 工作流
 
 每一个 Schema 都是由一系列的规则组成的，例如：
+
 ```go
 jio.String().Min(5).Max(10).Alphanum().Lowercase()
 ```
-这个例子中 String Schema 共有 4 条规则，分别是  `Min(5)` `Max(10)` `Alphanum()` `Lowercase()` ，校验的顺序也会是依次校验  `Min(5)` `Max(10)` `Alphanum()` `Lowercase()`。如果中间某个规则校验失败，Schema 的校验就会停止并向外抛出错误。
 
-同时我们为了提升代码的可读性，我们为三个内置规则设置了优先匹配的规则，分别是
+这个例子中 String Schema 共有 4 条规则，分别是  `Min(5)` `Max(10)` `Alphanum()` `Lowercase()` ，也会按顺序依次校验 `Min(5)` `Max(10)` `Alphanum()` `Lowercase()`。如果某个规则校验失败，Schema 的校验就会停止并向外抛出错误。
+
+为了提升代码的可读性，这三个内置规则会优先匹配，分别是
+
 * `Required()`
 * `Optional()`
 * `Default(value)`
 
-即包含这三个内置规则的 Schema 将优先校验这三个规则，例如：
+例如：
+
 ```go
 jio.String().Min(5).Max(10).Alphanum().Lowercase().Required()
 ```
+
 的实际匹配顺序将会是 `Required()` `Min(5)` `Max(10)` `Alphanum()` `Lowercase()`。
 
-在校验执行完所有的规则后，最后我们校验数据的基本类型是否符合 Schema 的预期。如上文的例子中，如果经过所有的规则处理后最终数据的类型不是 String，那么 Schema 将会抛出错误。
+在校验完所有的规则后，最后我们检查数据的基本类型是否是 Schema 的类型，如果不是，Schema 将会抛出错误。
 
 ### 验证上下文（Context）
 
-工作流中的数据传递和流程控制是依靠 Context 结构完成的，略去一些内部方法和字段后的 Context 结构大概是这样的：
+工作流中的数据传递依靠 Context，结构是这样的：
+
 ```go
 type Context struct {
-    Value    interface{}  // 需要校验的原始数据，也可以重新赋值改变结果
+    Value    interface{}  // 原始数据，也可以重新赋值来改变结果
 }
 func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) { // 引用其他字段数据
 }
 func (ctx *Context) Abort(err error) { // 终止校验并抛出错误
   ...
 }
-func (ctx *Context) Skip() { // 跳过这个 Schema 后续规则的校验
+func (ctx *Context) Skip() { // 跳过后续规则
   ...
 }
 ```
 
-我们来尝试自定义一个校验规则看看 Context 是怎么使用的，添加规则可以使用 `Transform` 方法：
+我们来尝试自定义一个校验规则，添加规则可以使用 `Transform` 方法：
+
 ```go
 jio.String().Transform(func(ctx *jio.Context) {
-    if ctx.Value == "faceair" {
-        ctx.Abort(errors.New("oh my god"))
+    if ctx.Value != "faceair" {
+        ctx.Abort(errors.New("你不是 faceair"))
     }
 })
 ```
-我们添加的这个自定义规则的意思是当校验数据等于 `faceair` 的时候抛出 `oh my god`的错误。
+
+我们添加的这个自定义规则的意思是当原始数据等于 `faceair` 的时候抛出 `你不是 faceair` 的错误。
 
 实际上内置的校验规则也是用类似的方式工作的，例如 `Optional()` 的核心代码是：
+
 ```go
 if ctx.Value == nil {
   ctx.Skip()
 }
 ```
-也可以对 ctx.Value 重新赋值改变输出结果，例如内置的`Lowercase()` 是将原始字符串全部转成小写，核心代码是：
+
+也可以对 ctx.Value 重新赋值改变输出结果，例如内置的 `Lowercase()` 是将原始字符串全部转成小写，核心代码是：
+
 ```go
 ctx.Value = strings.ToLower(ctx.Value)
 ```
 
 ### 引用与优先级
 
-大部分情况下的校验只用关心当前字段的数据，但也有一些时候需要跟其他字段的数据联动，例如
+大部分情况下的规则只使用当前字段的数据，但有时也需要跟其他字段配合。例如：
+
 ```
 {
-    "type": "ip",  // 枚举值，ip 或 domain
+    "type": "ip",  // 枚举值，`ip` 或 `domain`
     "value": "8.8.8.8"
 }
 ```
-这个时候 `value` 的校验规则需要根据 `type` 的具体类型来决定，可以写成
+
+这个 `value` 的校验规则根据 `type` 的值来决定，可以写成
+
 ```go
 jio.Object().Keys(jio.K{
         "type": jio.String().Valid("ip", "domain").SetPriority(1).Default("ip"),
@@ -154,18 +242,22 @@ jio.Object().Keys(jio.K{
             When("type", "domain", jio.String().Regex(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$`)).Required(),
 })
 ```
-通过 `When` 函数可以实现引用其他字段数据，如果判断成功就应用新的校验规则给当前的数据。
 
-另外你可能注意到 `type` 的校验 Schema 中添加了一个 `SetPriority` 方法。因为当校验规则存在互相引用的时候，可能会存在校验先后顺序的要求，当我们期望同一 Object 下的某个字段被优先校验的时候我们可以给它设置一个较大的优先值 (默认值优先级 0 )。
-假如这里如果传入的数据为：
+`When` 函数可以引用其他字段数据，如果判断成功就应用新的校验规则给当前的数据。
+
+另外，你可能注意到 `type` 的规则中有一个 `SetPriority` 方法。如果输入数据为：
+
 ```json
 {
     "value": "8.8.8.8"
 }
 ```
-不手动设置优先级的时候，可能 `value` 的校验规则会先执行，此时引用 `type` 的值就会是空值，无法满足我们的校验要求。
 
-如果在自定义规则中也想引用其他字段的数据可以使用 Context 上的 `Ref` 方法。如果引用的数据是嵌套的的对象则引用字段的路径需要用 `.` 连接，例如想要引用 `people ` 下的 `name` 则引用路径为 `people.name`。
+不设置优先级的时候，可能 `value` 的校验规则会先执行，此时引用 `type` 的值就会是空值，校验就会失败。
+因为存在校验规则互相引用时，就可能会存在校验顺序的要求。当我们希望同一 Object 下的某个字段优先校验时，我们可以给它设置一个较大的优先值 (默认值优先级 0 )。
+
+如果在自定义规则中也想引用其他字段的数据，可以使用 Context 上的 `Ref` 方法。如果引用的数据是嵌套的的对象，则引用字段的路径需要用 `.` 连接。例如，想要引用 `people` 对象下的 `name` 则引用路径为 `people.name`：
+
 ```json
 {
     "type": "people",
@@ -174,3 +266,7 @@ jio.Object().Keys(jio.K{
     }
 }
 ```
+
+## License
+
+[MIT](LICENSE)

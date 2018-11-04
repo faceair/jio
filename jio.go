@@ -43,7 +43,7 @@ func DefaultErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	body, _ := json.Marshal(map[string]string{
 		"message": err.Error(),
 	})
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
 	w.Write(body)
 }
