@@ -80,34 +80,34 @@ func main() {
 package main
 
 import (
-	"io/ioutil"
-	"net/http"
+    "io/ioutil"
+    "net/http"
 
-	"github.com/faceair/jio"
-	"github.com/go-chi/chi"
+    "github.com/faceair/jio"
+    "github.com/go-chi/chi"
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Route("/people", func(r chi.Router) {
-		r.With(jio.ValidateBody(jio.Object().Keys(jio.K{
-			"name":  jio.String().Min(3).Max(10).Required(),
-			"age":   jio.Number().Integer().Min(0).Max(100).Required(),
-			"phone": jio.String().Regex(`^1[34578]\d{9}$`).Required(),
-		}), jio.DefaultErrorHandler)).Post("/", func(w http.ResponseWriter, r *http.Request) {
-			body, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				panic(err)
-			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
-			w.Write(body)
-		})
-	})
-	http.ListenAndServe(":8080", r)
+    r := chi.NewRouter()
+    r.Route("/people", func(r chi.Router) {
+        r.With(jio.ValidateBody(jio.Object().Keys(jio.K{
+            "name":  jio.String().Min(3).Max(10).Required(),
+            "age":   jio.Number().Integer().Min(0).Max(100).Required(),
+            "phone": jio.String().Regex(`^1[34578]\d{9}$`).Required(),
+        }), jio.DefaultErrorHandler)).Post("/", func(w http.ResponseWriter, r *http.Request) {
+            body, err := ioutil.ReadAll(r.Body)
+            if err != nil {
+                panic(err)
+            }
+            w.Header().Set("Content-Type", "application/json; charset=utf-8")
+            w.WriteHeader(http.StatusOK)
+            w.Write(body)
+        })
+    })
+    http.ListenAndServe(":8080", r)
 }
 ```
-当校验失败时调用 `jio.ValidateBody` 的第二个函数进行错误处理。
+校验失败时调用 `jio.ValidateBody`  的第二个参数进行错误处理。
 
 ### 使用 middleware 校验 query 参数
 
@@ -115,32 +115,32 @@ func main() {
 package main
 
 import (
-	"encoding/json"
-	"net/http"
+    "encoding/json"
+    "net/http"
 
-	"github.com/faceair/jio"
-	"github.com/go-chi/chi"
+    "github.com/faceair/jio"
+    "github.com/go-chi/chi"
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Route("/people", func(r chi.Router) {
-		r.With(jio.ValidateQuery(jio.Object().Keys(jio.K{
-			"keyword":  jio.String(),
+    r := chi.NewRouter()
+    r.Route("/people", func(r chi.Router) {
+        r.With(jio.ValidateQuery(jio.Object().Keys(jio.K{
+            "keyword":  jio.String(),
             "is_adult": jio.Bool().Truthy("true", "yes").Falsy("false", "no"),
             "starts_with": jio.Number().ParseString().Integer(),
-		}), jio.DefaultErrorHandler)).Get("/", func(w http.ResponseWriter, r *http.Request) {
-			query := r.Context().Value(jio.ContextKeyQuery).(map[string]interface{})
-			body, err := json.Marshal(query)
-			if err != nil {
-				panic(err)
-			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
-			w.Write(body)
-		})
-	})
-	http.ListenAndServe(":8080", r)
+        }), jio.DefaultErrorHandler)).Get("/", func(w http.ResponseWriter, r *http.Request) {
+            query := r.Context().Value(jio.ContextKeyQuery).(map[string]interface{})
+            body, err := json.Marshal(query)
+            if err != nil {
+                panic(err)
+            }
+            w.Header().Set("Content-Type", "application/json; charset=utf-8")
+            w.WriteHeader(http.StatusOK)
+            w.Write(body)
+        })
+    })
+    http.ListenAndServe(":8080", r)
 }
 ```
 需要注意的是 query 参数的原始值都是 string，校验时可能需要先转换类型（例如 `jio.Number().ParseString()` 或 `jio.Bool().Truthy(values)`）。

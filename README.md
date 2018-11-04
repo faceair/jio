@@ -81,34 +81,34 @@ Take [chi](https://github.com/go-chi/chi) as an example, the other frameworks ar
 package main
 
 import (
-	"io/ioutil"
-	"net/http"
+    "io/ioutil"
+    "net/http"
 
-	"github.com/faceair/jio"
-	"github.com/go-chi/chi"
+    "github.com/faceair/jio"
+    "github.com/go-chi/chi"
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Route("/people", func(r chi.Router) {
-		r.With(jio.ValidateBody(jio.Object().Keys(jio.K{
-			"name":  jio.String().Min(3).Max(10).Required(),
-			"age":   jio.Number().Integer().Min(0).Max(100).Required(),
-			"phone": jio.String().Regex(`^1[34578]\d{9}$`).Required(),
-		}), jio.DefaultErrorHandler)).Post("/", func(w http.ResponseWriter, r *http.Request) {
-			body, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				panic(err)
-			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
-			w.Write(body)
-		})
-	})
-	http.ListenAndServe(":8080", r)
+    r := chi.NewRouter()
+    r.Route("/people", func(r chi.Router) {
+        r.With(jio.ValidateBody(jio.Object().Keys(jio.K{
+            "name":  jio.String().Min(3).Max(10).Required(),
+            "age":   jio.Number().Integer().Min(0).Max(100).Required(),
+            "phone": jio.String().Regex(`^1[34578]\d{9}$`).Required(),
+        }), jio.DefaultErrorHandler)).Post("/", func(w http.ResponseWriter, r *http.Request) {
+            body, err := ioutil.ReadAll(r.Body)
+            if err != nil {
+                panic(err)
+            }
+            w.Header().Set("Content-Type", "application/json; charset=utf-8")
+            w.WriteHeader(http.StatusOK)
+            w.Write(body)
+        })
+    })
+    http.ListenAndServe(":8080", r)
 }
 ```
-The second function of `jio.ValidateBody` is called for error handling when the validation fails.
+The second parameter of `jio.ValidateBody` is called for error handling when the validation fails.
 
 ### Validate the query parameter with middleware
 
@@ -116,32 +116,32 @@ The second function of `jio.ValidateBody` is called for error handling when the 
 package main
 
 import (
-	"encoding/json"
-	"net/http"
+    "encoding/json"
+    "net/http"
 
-	"github.com/faceair/jio"
-	"github.com/go-chi/chi"
+    "github.com/faceair/jio"
+    "github.com/go-chi/chi"
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Route("/people", func(r chi.Router) {
-		r.With(jio.ValidateQuery(jio.Object().Keys(jio.K{
-			"keyword":  jio.String(),
+    r := chi.NewRouter()
+    r.Route("/people", func(r chi.Router) {
+        r.With(jio.ValidateQuery(jio.Object().Keys(jio.K{
+            "keyword":  jio.String(),
             "is_adult": jio.Bool().Truthy("true", "yes").Falsy("false", "no"),
             "starts_with": jio.Number().ParseString().Integer(),
-		}), jio.DefaultErrorHandler)).Get("/", func(w http.ResponseWriter, r *http.Request) {
-			query := r.Context().Value(jio.ContextKeyQuery).(map[string]interface{})
-			body, err := json.Marshal(query)
-			if err != nil {
-				panic(err)
-			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
-			w.Write(body)
-		})
-	})
-	http.ListenAndServe(":8080", r)
+        }), jio.DefaultErrorHandler)).Get("/", func(w http.ResponseWriter, r *http.Request) {
+            query := r.Context().Value(jio.ContextKeyQuery).(map[string]interface{})
+            body, err := json.Marshal(query)
+            if err != nil {
+                panic(err)
+            }
+            w.Header().Set("Content-Type", "application/json; charset=utf-8")
+            w.WriteHeader(http.StatusOK)
+            w.Write(body)
+        })
+    })
+    http.ListenAndServe(":8080", r)
 }
 ```
 Note that the original value of the query parameter is string, you may need to convert the value type first (for example, `jio.Number().ParseString()` or `jio.Bool().Truthy(values)`).
@@ -184,14 +184,14 @@ Data transfer in the workflow depends on context, the structure is like this:
 
 ```go
 Type Context struct {
-    Value interface{} // Raw data, you can also reassign to change the result
+    Value interface{} // Raw data, you can also reassign to change the result
 }
-Func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) { // Reference other field data
+func (ctx *Context) Ref(refPath string) (value interface{}, ok bool) { // Reference other field data
 }
-Func (ctx *Context) Abort(err error) { // Terminate the validation and throw an error
+func (ctx *Context) Abort(err error) { // Terminate the validation and throw an error
   ...
 }
-Func (ctx *Context) Skip() { // Skip subsequent rules
+func (ctx *Context) Skip() { // Skip subsequent rules
   ...
 }
 ```
@@ -200,9 +200,9 @@ Let's try to customize a validation rule. Add a rule to use the `Transform` meth
 
 ```go
 jio.String().Transform(func(ctx *jio.Context) {
-    If ctx.Value != "faceair" {
-        ctx.Abort(errors.New("you are not faceair"))
-    }
+    If ctx.Value != "faceair" {
+        ctx.Abort(errors.New("you are not faceair"))
+    }
 })
 ```
 
@@ -228,8 +228,8 @@ In most cases, the rules only use the data of the current field, but sometimes i
 
 ```
 {
-    "type": "ip", // enumeration value, `ip` or `domain`
-    "value": "8.8.8.8"
+    "type": "ip", // enumeration value, `ip` or `domain`
+    "value": "8.8.8.8"
 }
 ```
 
@@ -237,10 +237,10 @@ The validation rules of this `value` is determined by the value of `type` and ca
 
 ```go
 jio.Object().Keys(jio.K{
-        "type": jio.String().Valid("ip", "domain").SetPriority(1).Default("ip"),
-        "value": jio.String().
-            When("type", "ip", jio.String().Regex(`^\d+\.\d+\.\d+\.\d+$`)).
-            When("type", "domain", jio.String().Regex(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0 -9]\.[a-zA-Z]{2,}$`)).Required(),
+        "type": jio.String().Valid("ip", "domain").SetPriority(1).Default("ip"),
+        "value": jio.String().
+            When("type", "ip", jio.String().Regex(`^\d+\.\d+\.\d+\.\d+$`)).
+            When("type", "domain", jio.String().Regex(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0 -9]\.[a-zA-Z]{2,}$`)).Required(),
 })
 ```
 
@@ -250,7 +250,7 @@ In addition, you may notice that there is a `SetPriority` method in the rules of
 
 ```json
 {
-    "value": "8.8.8.8"
+    "value": "8.8.8.8"
 }
 ```
 
@@ -261,10 +261,10 @@ If you want to reference data from other fields in your custom rules, you can us
 
 ```json
 {
-    "type": "people",
-    "people": {
-        "name": "faceair"
-    }
+    "type": "people",
+    "people": {
+        "name": "faceair"
+    }
 }
 ```
 
