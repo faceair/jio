@@ -6,11 +6,12 @@
 <p align="center">Make validation simple and efficient !</p>
 
 <p align="center">
-    <a href="https://raw.githubusercontent.com/faceair/jio/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
-    <a href="https://travis-ci.org/faceair/jio"><img src="https://img.shields.io/travis/faceair/jio/master.svg?t=1540985641" alt="Travis branch"></a>
-    <a href="https://coveralls.io/github/faceair/jio?branch=master"><img src="https://coveralls.io/repos/github/faceair/jio/badge.svg?branch=master&t=1540985641" alt="Coverage Status"></a>
-    <a href="https://goreportcard.com/report/github.com/faceair/jio"><img src="https://goreportcard.com/badge/github.com/faceair/jio?t=1540985641" alt="Go Report Card"></a>
+    <a href="https://travis-ci.org/faceair/jio"><img src="https://img.shields.io/travis/faceair/jio/master.svg" alt="Travis branch"></a>
+    <a href="https://coveralls.io/github/faceair/jio?branch=master"><img src="https://coveralls.io/repos/github/faceair/jio/badge.svg?branch=master" alt="Coverage Status"></a>
+    <a href="https://goreportcard.com/report/github.com/faceair/jio"><img src="https://goreportcard.com/badge/github.com/faceair/jio" alt="Go Report Card"></a>
+    <a href="https://github.com/avelino/awesome-go"><img src="https://awesome.re/mentioned-badge.svg" alt="License"></a>
     <a href="https://godoc.org/github.com/faceair/jio"><img src="https://godoc.org/github.com/faceair/jio?status.svg" alt="GoDoc"></a>
+    <a href="https://raw.githubusercontent.com/faceair/jio/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
 </p>
 
 [中文文档](README.zh.md)
