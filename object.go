@@ -160,7 +160,9 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 			if ctx.Err != nil {
 				return
 			}
-			ctxValue[obj.key] = ctx.Value
+			if !ctx.skip {
+				ctxValue[obj.key] = ctx.Value
+			}
 		}
 	})
 }

@@ -62,10 +62,24 @@ func TestObjectSchema_Required(t *testing.T) {
 
 func TestObjectSchema_Optional(t *testing.T) {
 	schema := Object().Optional()
+
 	ctx := NewContext(nil)
 	schema.Validate(ctx)
 	if ctx.Err != nil {
 		t.Error("should no error")
+	}
+
+	schema = Object().Keys(K{
+		"hi": String(),
+	})
+	ctx = NewContext(map[string]interface{}{})
+	schema.Validate(ctx)
+	if ctx.Err != nil {
+		t.Error("should no error")
+	}
+	_, ok := ctx.Value.(map[string]interface{})["hi"]
+	if ok {
+		t.Error("should no hi field")
 	}
 }
 
