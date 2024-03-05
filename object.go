@@ -164,6 +164,7 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 				ctxValue[obj.key] = ctx.Value
 			}
 		}
+		ctx.skip = false
 	})
 }
 
