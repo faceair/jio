@@ -123,7 +123,7 @@ func (o *ObjectSchema) Without(keys ...string) *ObjectSchema {
 				contains = append(contains, key)
 			}
 		}
-		if len(contains) > 1 {
+		if len(contains) > 0 {
 			ctx.Abort(fmt.Errorf("field `%s` contains %v", ctx.FieldPath(), strings.Join(contains, ",")))
 			return
 		}
@@ -164,6 +164,7 @@ func (o *ObjectSchema) Keys(children K) *ObjectSchema {
 				ctxValue[obj.key] = ctx.Value
 			}
 		}
+		ctx.skip = false
 	})
 }
 
